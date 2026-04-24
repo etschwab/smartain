@@ -1,0 +1,11 @@
+
+> smartrain-starter@0.1.0 dev
+> next dev
+
+▲ Next.js 16.2.4 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.254.188:3000
+- Environments: .env.local
+✓ Ready in 286ms
+
+ GET /login 200 in 202ms (next.js: 88ms, application-code: 114ms)
