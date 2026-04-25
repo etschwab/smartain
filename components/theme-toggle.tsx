@@ -1,19 +1,24 @@
 "use client";
 
 import { MoonStar, SunMedium } from "lucide-react";
-import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 
 export function ThemeToggle() {
-  const { resolvedTheme, setTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
+  function toggleTheme() {
+    const root = document.documentElement;
+    const nextIsDark = !root.classList.contains("dark");
+
+    root.classList.toggle("dark", nextIsDark);
+    root.style.colorScheme = nextIsDark ? "dark" : "light";
+    localStorage.setItem("smartrain-theme", nextIsDark ? "dark" : "light");
+  }
 
   return (
     <Button
       aria-label="Theme umschalten"
       size="icon"
       variant="ghost"
-      onClick={() => setTheme(isDark ? "light" : "dark")}
+      onClick={toggleTheme}
     >
       <SunMedium className="hidden h-4 w-4 dark:block" />
       <MoonStar className="h-4 w-4 dark:hidden" />
