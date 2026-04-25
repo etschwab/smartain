@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { managerRoles } from "./constants";
 import { getSupabaseAnonKey, getSupabaseUrl } from "./env";
+import { isRecoverableSetupError } from "./supabase-errors";
 import type { Profile, TeamMember } from "./types";
 
 export async function createClient() {
@@ -69,18 +70,14 @@ function normalizeProfile(raw: Partial<Profile> & { id: string }, user: User): P
   };
 }
 
-function isMissingColumnError(message: string) {
-  return /could not find the '.*' column|schema cache/i.test(message);
-}
-
-function isProfileWritePolicyError(message: string) {
-  return /row-level security policy|violates row-level security/i.test(message);
-}
-
 async function ensureProfile(supabase: Awaited<ReturnType<typeof createClient>>, user: User) {
   const { data: existingProfile, error } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
 
   if (error) {
+    if (isRecoverableSetupError(error)) {
+      return normalizeProfile({ id: user.id, email: user.email ?? null }, user);
+    }
+
     throw new Error(error.message);
   }
 
@@ -127,12 +124,8 @@ async function ensureProfile(supabase: Awaited<ReturnType<typeof createClient>>,
 
     lastError = insertError.message;
 
-    if (isProfileWritePolicyError(insertError.message)) {
+    if (isRecoverableSetupError(insertError)) {
       return normalizeProfile({ id: user.id, email: user.email ?? null, full_name: fullName }, user);
-    }
-
-    if (!isMissingColumnError(insertError.message)) {
-      throw new Error(insertError.message);
     }
   }
 

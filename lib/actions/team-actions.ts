@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { requireProfile, requireTeamAccess, requireTeamManager } from "@/lib/supabase-server";
 import { managerRoles } from "@/lib/constants";
+import { isRecoverableSetupError } from "@/lib/supabase-errors";
 
 function getString(formData: FormData, name: string) {
   return String(formData.get(name) ?? "").trim();
@@ -112,6 +113,10 @@ export async function createTeamAction(formData: FormData) {
     .select("*")
     .single();
 
+  if (isRecoverableSetupError(teamError)) {
+    redirect("/teams/new?toast=database-setup-needed");
+  }
+
   if (teamError) {
     throw new Error(teamError.message);
   }
@@ -123,11 +128,21 @@ export async function createTeamAction(formData: FormData) {
     status: "active"
   });
 
+  if (isRecoverableSetupError(membershipError)) {
+    redirect("/teams/new?toast=database-setup-needed");
+  }
+
   if (membershipError) {
     throw new Error(membershipError.message);
   }
 
-  await createTeamInviteInternal(supabase, team.id, user.id, "player", null);
+  try {
+    await createTeamInviteInternal(supabase, team.id, user.id, "player", null);
+  } catch (error) {
+    if (!isRecoverableSetupError(error instanceof Error ? error : String(error))) {
+      throw error;
+    }
+  }
 
   redirect(`/teams/${team.id}?toast=team-created`);
 }

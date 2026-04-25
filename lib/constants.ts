@@ -55,5 +55,6 @@ export const toastMessages: Record<string, string> = {
   "task-created": "Aufgabe erstellt",
   "task-updated": "Aufgabe aktualisiert",
   "task-removed": "Aufgabe entfernt",
-  "notifications-read": "Benachrichtigungen aktualisiert"
+  "notifications-read": "Benachrichtigungen aktualisiert",
+  "database-setup-needed": "Supabase ist noch nicht vollstaendig eingerichtet"
 };

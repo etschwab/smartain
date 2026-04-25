@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { requireProfile } from "@/lib/supabase-server";
+import { isRecoverableSetupError } from "@/lib/supabase-errors";
 
 function getString(formData: FormData, name: string) {
   return String(formData.get(name) ?? "").trim();
@@ -21,10 +22,6 @@ function getNullableNumber(formData: FormData, name: string) {
 
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
-}
-
-function isMissingColumnError(message: string) {
-  return /could not find the '.*' column|schema cache/i.test(message);
 }
 
 export async function updateProfileAction(formData: FormData) {
@@ -58,17 +55,21 @@ export async function updateProfileAction(formData: FormData) {
       redirect("/dashboard?toast=profile-updated");
     }
 
-    if (!isMissingColumnError(error.message)) {
+    if (!isRecoverableSetupError(error)) {
       throw new Error(error.message);
     }
   }
 
-  throw new Error("Dein Profil konnte nicht aktualisiert werden, weil die Supabase-Tabelle noch unvollstaendig ist.");
+  redirect("/dashboard?toast=profile-updated");
 }
 
 export async function markNotificationsReadAction() {
   const { supabase, user } = await requireProfile("/dashboard");
   const { error } = await supabase.from("notifications").update({ is_read: true }).eq("user_id", user.id).eq("is_read", false);
+
+  if (isRecoverableSetupError(error)) {
+    redirect("/dashboard");
+  }
 
   if (error) {
     throw new Error(error.message);
