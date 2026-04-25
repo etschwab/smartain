@@ -1,0 +1,31 @@
+"use client";
+
+import { Share2 } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+
+type ShareInviteButtonProps = {
+  url: string;
+  title: string;
+};
+
+export function ShareInviteButton({ url, title }: ShareInviteButtonProps) {
+  async function handleShare() {
+    if (!navigator.share) {
+      toast.info("Teilen wird auf diesem Geraet nicht direkt unterstuetzt.");
+      return;
+    }
+
+    await navigator.share({
+      title,
+      url
+    });
+  }
+
+  return (
+    <Button type="button" variant="ghost" onClick={handleShare}>
+      <Share2 className="h-4 w-4" />
+      Teilen
+    </Button>
+  );
+}
