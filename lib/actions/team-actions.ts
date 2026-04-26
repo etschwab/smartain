@@ -31,6 +31,21 @@ async function createTeamInviteInternal(
   expiresAt: string | null
 ) {
   const code = createInviteCode();
+  const rpcInvite = await supabase.rpc("create_team_invite", {
+    target_team_id: teamId,
+    invite_code: code,
+    invite_role: role,
+    invite_expires_at: expiresAt
+  });
+
+  if (!rpcInvite.error) {
+    return rpcInvite.data;
+  }
+
+  if (!isRecoverableSetupError(rpcInvite.error)) {
+    throw new Error(getUserFacingSupabaseError(rpcInvite.error, "Der Einladungslink konnte nicht erstellt werden."));
+  }
+
   const { data: team, error: teamError } = await supabase
     .from("teams")
     .select("*")
@@ -207,8 +222,34 @@ export async function createTeamAction(formData: FormData) {
     throw new Error(getUserFacingSupabaseError(ownedTeamsResult.error, "Die Teamgrenze konnte nicht geprüft werden."));
   }
 
-  if ((ownedTeamsResult.count ?? 0) >= MAX_OWNED_TEAMS) {
+  if (!ownedTeamsResult.error && (ownedTeamsResult.count ?? 0) >= MAX_OWNED_TEAMS) {
     redirect("/teams?toast=team-limit-reached");
+  }
+
+  const rpcTeam = await supabase.rpc("create_team_with_owner", {
+    team_name: name,
+    team_sport: sport,
+    team_season: season,
+    team_theme_color: themeColor,
+    team_logo_url: getNullableString(formData, "logo_url")
+  });
+
+  if (!rpcTeam.error) {
+    const teamId = String(rpcTeam.data);
+
+    try {
+      await createTeamInviteInternal(supabase, teamId, user.id, "player", null);
+    } catch (error) {
+      if (!isRecoverableSetupError(error instanceof Error ? error : String(error))) {
+        throw error;
+      }
+    }
+
+    redirect(`/teams/${teamId}?toast=team-created`);
+  }
+
+  if (!isRecoverableSetupError(rpcTeam.error)) {
+    throw new Error(getUserFacingSupabaseError(rpcTeam.error, "Das Team konnte nicht erstellt werden."));
   }
 
   let teamResult = await supabase
