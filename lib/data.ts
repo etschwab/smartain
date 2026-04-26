@@ -18,6 +18,12 @@ import type {
 } from "./types";
 
 type AppSupabaseClient = SupabaseClient<any, "public", any>;
+type RawInvite = Partial<TeamInvite> & {
+  id: string;
+  team_id: string;
+  token?: string | null;
+  code?: string | null;
+};
 
 function assertNoError(error: { message: string } | null, fallback: string) {
   if (error) {
@@ -53,6 +59,26 @@ function normalizeMembership(membership: Partial<TeamMember> & { id: string; tea
     invited_by: membership.invited_by ?? null,
     created_at: membership.created_at ?? new Date().toISOString(),
     updated_at: membership.updated_at ?? membership.created_at ?? new Date().toISOString()
+  };
+}
+
+function normalizeInvite(invite: RawInvite): TeamInvite {
+  const code = invite.code ?? invite.token ?? invite.id;
+
+  return {
+    id: invite.id,
+    team_id: invite.team_id,
+    code,
+    token: invite.token ?? code,
+    team_name: invite.team_name ?? "Team-Einladung",
+    team_sport: invite.team_sport ?? "Team",
+    role: invite.role ?? "player",
+    is_active: invite.is_active ?? true,
+    expires_at: invite.expires_at ?? null,
+    last_used_at: invite.last_used_at ?? null,
+    created_by: invite.created_by ?? null,
+    created_at: invite.created_at ?? new Date().toISOString(),
+    updated_at: invite.updated_at ?? invite.created_at ?? new Date().toISOString()
   };
 }
 
@@ -182,33 +208,75 @@ export async function listTeamMembersDetailed(supabase: AppSupabaseClient, teamI
 }
 
 export async function listTeamInvites(supabase: AppSupabaseClient, teamId: string) {
-  const { data, error } = await supabase
+  const primary = await supabase
     .from("team_invites")
     .select("*")
     .eq("team_id", teamId)
     .order("created_at", { ascending: false });
 
-  if (isRecoverableSetupError(error)) {
+  if (!primary.error) {
+    return (((primary.data as RawInvite[]) ?? []).map(normalizeInvite)) satisfies TeamInvite[];
+  }
+
+  if (!isRecoverableSetupError(primary.error)) {
+    assertNoError(primary.error, "Einladungslinks konnten nicht geladen werden");
+  }
+
+  const fallback = await supabase
+    .from("invites")
+    .select("*")
+    .eq("team_id", teamId)
+    .order("created_at", { ascending: false });
+
+  if (isRecoverableSetupError(fallback.error)) {
     return [] satisfies TeamInvite[];
   }
 
-  assertNoError(error, "Einladungslinks konnten nicht geladen werden");
-  return ((data as TeamInvite[]) ?? []) as TeamInvite[];
+  assertNoError(fallback.error, "Einladungslinks konnten nicht geladen werden");
+  return (((fallback.data as RawInvite[]) ?? []).map(normalizeInvite)) satisfies TeamInvite[];
 }
 
 export async function getPublicInvite(supabase: AppSupabaseClient, inviteCode: string) {
-  const { data, error } = await supabase
+  const normalizedCode = inviteCode.trim();
+  const uppercaseCode = normalizedCode.toUpperCase();
+  const codes = Array.from(new Set([normalizedCode, uppercaseCode].filter(Boolean)));
+
+  const primary = await supabase
     .from("team_invites")
     .select("*")
-    .eq("code", inviteCode)
+    .in("code", codes)
     .maybeSingle();
 
-  if (isRecoverableSetupError(error)) {
+  if (!primary.error && primary.data) {
+    return normalizeInvite(primary.data as RawInvite);
+  }
+
+  if (primary.error && !isRecoverableSetupError(primary.error)) {
+    assertNoError(primary.error, "Einladung konnte nicht geladen werden");
+  }
+
+  const tokenResult = await supabase
+    .from("team_invites")
+    .select("*")
+    .in("token", codes)
+    .maybeSingle();
+
+  if (!tokenResult.error && tokenResult.data) {
+    return normalizeInvite(tokenResult.data as RawInvite);
+  }
+
+  const fallback = await supabase
+    .from("invites")
+    .select("*")
+    .in("token", codes)
+    .maybeSingle();
+
+  if (isRecoverableSetupError(fallback.error)) {
     return null;
   }
 
-  assertNoError(error, "Einladung konnte nicht geladen werden");
-  return (data as TeamInvite | null) ?? null;
+  assertNoError(fallback.error, "Einladung konnte nicht geladen werden");
+  return fallback.data ? normalizeInvite(fallback.data as RawInvite) : null;
 }
 
 export async function listTeamEvents(supabase: AppSupabaseClient, teamId: string) {

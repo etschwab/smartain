@@ -54,6 +54,7 @@ export type TeamInvite = {
   id: string;
   team_id: string;
   code: string;
+  token?: string | null;
   team_name: string;
   team_sport: string;
   role: TeamRole;

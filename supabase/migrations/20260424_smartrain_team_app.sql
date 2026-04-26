@@ -116,6 +116,7 @@ create table if not exists public.team_invites (
   id uuid primary key default gen_random_uuid(),
   team_id uuid not null references public.teams(id) on delete cascade,
   code text not null unique default upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 10)),
+  token text,
   team_name text not null,
   team_sport text not null,
   role public.team_role not null default 'player',

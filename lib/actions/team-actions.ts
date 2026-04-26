@@ -3,7 +3,9 @@
 import { redirect } from "next/navigation";
 import { requireProfile, requireTeamManager, requireTeamOwner } from "@/lib/supabase-server";
 import { managerRoles, MAX_OWNED_TEAMS } from "@/lib/constants";
+import { getPublicInvite } from "@/lib/data";
 import { getUserFacingSupabaseError, isRecoverableSetupError } from "@/lib/supabase-errors";
+import type { TeamInvite, TeamRole } from "@/lib/types";
 
 function getString(formData: FormData, name: string) {
   return String(formData.get(name) ?? "").trim();
@@ -14,6 +16,13 @@ function getNullableString(formData: FormData, name: string) {
   return value.length > 0 ? value : null;
 }
 
+function createInviteCode() {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const bytes = crypto.getRandomValues(new Uint8Array(10));
+
+  return Array.from(bytes, (byte) => alphabet[byte % alphabet.length]).join("");
+}
+
 async function createTeamInviteInternal(
   supabase: Awaited<ReturnType<typeof requireProfile>>["supabase"],
   teamId: string,
@@ -21,6 +30,7 @@ async function createTeamInviteInternal(
   role: string,
   expiresAt: string | null
 ) {
+  const code = createInviteCode();
   const { data: team, error: teamError } = await supabase
     .from("teams")
     .select("*")
@@ -43,6 +53,7 @@ async function createTeamInviteInternal(
     .from("team_invites")
     .insert({
       team_id: teamId,
+      code,
       team_name: teamName,
       team_sport: teamSport,
       role,
@@ -53,10 +64,72 @@ async function createTeamInviteInternal(
     .single();
 
   if (error) {
-    throw new Error(getUserFacingSupabaseError(error, "Der Einladungslink konnte nicht erstellt werden."));
+    if (!isRecoverableSetupError(error)) {
+      throw new Error(getUserFacingSupabaseError(error, "Der Einladungslink konnte nicht erstellt werden."));
+    }
+
+    const fallback = await supabase
+      .from("invites")
+      .insert({
+        team_id: teamId,
+        token: code,
+        created_by: createdBy,
+        expires_at: expiresAt
+      })
+      .select("*")
+      .single();
+
+    if (fallback.error) {
+      throw new Error(getUserFacingSupabaseError(fallback.error, "Der Einladungslink konnte nicht erstellt werden."));
+    }
+
+    return fallback.data;
   }
 
   return invite;
+}
+
+function inviteIsExpired(invite: TeamInvite) {
+  return Boolean(invite.expires_at && new Date(invite.expires_at).getTime() <= Date.now());
+}
+
+async function joinTeamWithInviteFallback(
+  supabase: Awaited<ReturnType<typeof requireProfile>>["supabase"],
+  userId: string,
+  invite: TeamInvite
+) {
+  if (!invite.is_active || inviteIsExpired(invite)) {
+    throw new Error("Dieser Einladungslink ist nicht mehr aktiv.");
+  }
+
+  const role = invite.role satisfies TeamRole;
+  const membership = await supabase
+    .from("team_members")
+    .upsert(
+      {
+        team_id: invite.team_id,
+        user_id: userId,
+        role,
+        status: "active",
+        invited_by: invite.created_by
+      },
+      {
+        onConflict: "team_id,user_id"
+      }
+    )
+    .select("team_id")
+    .single();
+
+  if (membership.error) {
+    throw new Error(getUserFacingSupabaseError(membership.error, "Der Teambeitritt konnte nicht abgeschlossen werden."));
+  }
+
+  await supabase
+    .from("team_invites")
+    .update({ last_used_at: new Date().toISOString() })
+    .eq("id", invite.id);
+
+  return invite.team_id;
 }
 
 async function countActiveOwners(
@@ -281,11 +354,24 @@ export async function joinTeamAction(inviteCode: string) {
     invite_code: inviteCode
   });
 
+  let teamId: string;
+
   if (error) {
-    throw new Error(getUserFacingSupabaseError(error, "Der Teambeitritt konnte nicht abgeschlossen werden."));
+    if (!isRecoverableSetupError(error)) {
+      throw new Error(getUserFacingSupabaseError(error, "Der Teambeitritt konnte nicht abgeschlossen werden."));
+    }
+
+    const invite = await getPublicInvite(supabase, inviteCode);
+
+    if (!invite) {
+      throw new Error("Dieser Einladungslink ist ungültig oder abgelaufen.");
+    }
+
+    teamId = await joinTeamWithInviteFallback(supabase, user.id, invite);
+  } else {
+    teamId = String(data);
   }
 
-  const teamId = String(data);
   const managersResult = await supabase
     .from("team_members")
     .select("user_id, role")
