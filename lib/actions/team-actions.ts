@@ -344,13 +344,18 @@ export async function updateTeamSettingsAction(teamId: string, formData: FormDat
 
 export async function createInviteAction(teamId: string, formData: FormData) {
   const { supabase, user } = await requireTeamManager(teamId, `/teams/${teamId}`);
-  await createTeamInviteInternal(
-    supabase,
-    teamId,
-    user.id,
-    getString(formData, "role") || "player",
-    getNullableString(formData, "expires_at")
-  );
+  try {
+    await createTeamInviteInternal(
+      supabase,
+      teamId,
+      user.id,
+      getString(formData, "role") || "player",
+      getNullableString(formData, "expires_at")
+    );
+  } catch (error) {
+    console.error("Invite creation failed.", error);
+    redirect(`/teams/${teamId}?toast=invite-create-failed`);
+  }
 
   redirect(`/teams/${teamId}?toast=invite-created`);
 }

@@ -20,7 +20,11 @@ export function ToastFromSearch() {
     const message = toastMessages[toastKey] ?? "Aktion erfolgreich";
     const next = new URLSearchParams(searchParams.toString());
     next.delete("toast");
-    toast.success(message);
+    if (toastKey.includes("failed") || toastKey.includes("error")) {
+      toast.error(message);
+    } else {
+      toast.success(message);
+    }
     const query = next.toString();
     router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
   }, [pathname, router, searchParams]);

@@ -77,6 +77,7 @@ export const toastMessages: Record<string, string> = {
   "team-updated": "Team gespeichert",
   "profile-updated": "Profil aktualisiert",
   "invite-created": "Einladungslink erstellt",
+  "invite-create-failed": "Einladungslink konnte noch nicht erstellt werden. Bitte Supabase-Migration ausführen.",
   "invite-regenerated": "Einladungslink erneuert",
   "invite-updated": "Einladungslink aktualisiert",
   "joined-team": "Du bist dem Team beigetreten",
