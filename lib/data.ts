@@ -29,6 +29,33 @@ function unique<T>(values: T[]) {
   return Array.from(new Set(values));
 }
 
+function normalizeTeam(team: Partial<Team> & { id: string; name: string }): Team {
+  return {
+    id: team.id,
+    name: team.name,
+    sport: team.sport ?? "Sport",
+    season: team.season ?? ("age_group" in team && typeof team.age_group === "string" ? team.age_group : "Aktuelle Saison"),
+    logo_url: team.logo_url ?? null,
+    theme_color: team.theme_color ?? "#3b82f6",
+    created_by: team.created_by ?? null,
+    created_at: team.created_at ?? new Date().toISOString(),
+    updated_at: team.updated_at ?? team.created_at ?? new Date().toISOString()
+  };
+}
+
+function normalizeMembership(membership: Partial<TeamMember> & { id: string; team_id: string; user_id: string }): TeamMember {
+  return {
+    id: membership.id,
+    team_id: membership.team_id,
+    user_id: membership.user_id,
+    role: membership.role ?? "player",
+    status: membership.status ?? "active",
+    invited_by: membership.invited_by ?? null,
+    created_at: membership.created_at ?? new Date().toISOString(),
+    updated_at: membership.updated_at ?? membership.created_at ?? new Date().toISOString()
+  };
+}
+
 export async function getProfilesMap(supabase: AppSupabaseClient, userIds: string[]) {
   const ids = unique(userIds.filter(Boolean));
 
@@ -47,19 +74,25 @@ export async function getProfilesMap(supabase: AppSupabaseClient, userIds: strin
 }
 
 export async function listUserTeams(supabase: AppSupabaseClient, userId: string) {
-  const { data: memberships, error: membershipsError } = await supabase
+  let membershipsResult = await supabase
     .from("team_members")
     .select("*")
     .eq("user_id", userId)
     .eq("status", "active");
 
-  if (isRecoverableSetupError(membershipsError)) {
+  if (isRecoverableSetupError(membershipsResult.error)) {
+    membershipsResult = await supabase.from("team_members").select("*").eq("user_id", userId);
+  }
+
+  if (isRecoverableSetupError(membershipsResult.error)) {
     return [] satisfies TeamWithMembership[];
   }
 
-  assertNoError(membershipsError, "Mitgliedschaften konnten nicht geladen werden");
+  assertNoError(membershipsResult.error, "Mitgliedschaften konnten nicht geladen werden");
 
-  const teamMemberships = (memberships as TeamMember[]) ?? [];
+  const teamMemberships = (((membershipsResult.data as Array<Partial<TeamMember> & { id: string; team_id: string; user_id: string }>) ?? []).map(
+    normalizeMembership
+  )) satisfies TeamMember[];
   const teamIds = teamMemberships.map((membership) => membership.team_id);
 
   if (teamIds.length === 0) {
@@ -80,7 +113,7 @@ export async function listUserTeams(supabase: AppSupabaseClient, userId: string)
 
   const membershipByTeam = new Map(teamMemberships.map((membership) => [membership.team_id, membership]));
 
-  return ((teams as Team[]) ?? []).map((team) => ({
+  return (((teams as Array<Partial<Team> & { id: string; name: string }>) ?? []).map(normalizeTeam)).map((team) => ({
     ...team,
     membership: membershipByTeam.get(team.id)!
   }));
@@ -93,7 +126,7 @@ export async function getTeamById(supabase: AppSupabaseClient, teamId: string) {
   }
 
   assertNoError(error, "Team konnte nicht geladen werden");
-  return (data as Team | null) ?? null;
+  return data ? normalizeTeam(data as Partial<Team> & { id: string; name: string }) : null;
 }
 
 export async function listTeamMembersDetailed(supabase: AppSupabaseClient, teamId: string) {
@@ -109,7 +142,9 @@ export async function listTeamMembersDetailed(supabase: AppSupabaseClient, teamI
 
   assertNoError(error, "Mitglieder konnten nicht geladen werden");
 
-  const memberships = (data as TeamMember[]) ?? [];
+  const memberships = (((data as Array<Partial<TeamMember> & { id: string; team_id: string; user_id: string }>) ?? []).map(
+    normalizeMembership
+  )) satisfies TeamMember[];
   const profilesMap = await getProfilesMap(
     supabase,
     memberships.map((membership) => membership.user_id)

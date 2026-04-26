@@ -100,7 +100,7 @@ export async function createTeamAction(formData: FormData) {
     throw new Error("Bitte fuelle Name, Sportart und Saison aus.");
   }
 
-  const { data: team, error: teamError } = await supabase
+  let teamResult = await supabase
     .from("teams")
     .insert({
       name,
@@ -113,27 +113,40 @@ export async function createTeamAction(formData: FormData) {
     .select("*")
     .single();
 
-  if (isRecoverableSetupError(teamError)) {
-    redirect("/teams/new?toast=database-setup-needed");
+  if (isRecoverableSetupError(teamResult.error)) {
+    teamResult = await supabase
+      .from("teams")
+      .insert({
+        name,
+        age_group: season || sport
+      })
+      .select("*")
+      .single();
   }
 
-  if (teamError) {
-    throw new Error(teamError.message);
+  if (teamResult.error) {
+    throw new Error(teamResult.error.message);
   }
 
-  const { error: membershipError } = await supabase.from("team_members").insert({
+  const team = teamResult.data;
+
+  let membershipResult = await supabase.from("team_members").insert({
     team_id: team.id,
     user_id: user.id,
     role: "owner",
     status: "active"
   });
 
-  if (isRecoverableSetupError(membershipError)) {
-    redirect("/teams/new?toast=database-setup-needed");
+  if (isRecoverableSetupError(membershipResult.error)) {
+    membershipResult = await supabase.from("team_members").insert({
+      team_id: team.id,
+      user_id: user.id,
+      role: "owner"
+    });
   }
 
-  if (membershipError) {
-    throw new Error(membershipError.message);
+  if (membershipResult.error) {
+    throw new Error(membershipResult.error.message);
   }
 
   try {

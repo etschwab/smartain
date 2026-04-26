@@ -171,13 +171,22 @@ export async function requireTeamAccess(teamId: string, nextPath?: string) {
   const context = await requireProfile(nextPath ?? `/teams/${teamId}`);
   const membership = await getMembershipForUser(context.supabase, teamId, context.user.id);
 
-  if (!membership || membership.status !== "active") {
+  if (!membership) {
+    redirect("/teams");
+  }
+
+  const normalizedMembership = {
+    ...membership,
+    status: membership.status ?? ("active" as const)
+  };
+
+  if (normalizedMembership.status !== "active") {
     redirect("/teams");
   }
 
   return {
     ...context,
-    membership
+    membership: normalizedMembership
   };
 }
 
