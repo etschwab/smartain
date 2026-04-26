@@ -7,7 +7,7 @@ import { TeamTabs } from "@/components/team/team-tabs";
 import { InviteCard } from "@/components/team/invite-card";
 import { createInviteAction, regenerateInviteAction, toggleInviteAction, updateTeamSettingsAction } from "@/lib/actions";
 import { teamRoleOptions } from "@/lib/constants";
-import { getTeamById, listTeamInvites } from "@/lib/data";
+import { getTeamById, getTeamFeatureSupport, listTeamInvites } from "@/lib/data";
 import { getRequestOrigin } from "@/lib/request";
 import { requireTeamManager } from "@/lib/supabase-server";
 import { buildJoinPath } from "@/lib/utils";
@@ -21,7 +21,12 @@ type TeamSettingsPageProps = {
 export default async function TeamSettingsPage({ params }: TeamSettingsPageProps) {
   const { teamId } = await params;
   const { supabase } = await requireTeamManager(teamId, `/teams/${teamId}/settings`);
-  const [team, invites, origin] = await Promise.all([getTeamById(supabase, teamId), listTeamInvites(supabase, teamId), getRequestOrigin()]);
+  const [team, invites, origin, featureSupport] = await Promise.all([
+    getTeamById(supabase, teamId),
+    listTeamInvites(supabase, teamId),
+    getRequestOrigin(),
+    getTeamFeatureSupport(supabase)
+  ]);
 
   if (!team) {
     notFound();
@@ -62,26 +67,32 @@ export default async function TeamSettingsPage({ params }: TeamSettingsPageProps
         <Card className="p-6">
           <p className="section-kicker">Neuer Invite</p>
           <h2 className="mt-2 text-2xl font-semibold">Join-Link anlegen</h2>
-          <form action={createInviteAction.bind(null, team.id)} className="mt-5 grid gap-4">
-            <Select name="role" defaultValue="player">
-              {teamRoleOptions
-                .filter((role) => role.value !== "owner")
-                .map((role) => (
-                  <option key={role.value} value={role.value}>
-                    {role.label}
-                  </option>
-                ))}
-            </Select>
-            <Input name="expires_at" type="datetime-local" />
-            <div className="flex justify-end">
-              <SubmitButton pendingLabel="Link wird erstellt...">Invite-Link erstellen</SubmitButton>
-            </div>
-          </form>
+          {featureSupport.invites ? (
+            <form action={createInviteAction.bind(null, team.id)} className="mt-5 grid gap-4">
+              <Select name="role" defaultValue="player">
+                {teamRoleOptions
+                  .filter((role) => role.value !== "owner")
+                  .map((role) => (
+                    <option key={role.value} value={role.value}>
+                      {role.label}
+                    </option>
+                  ))}
+              </Select>
+              <Input name="expires_at" type="datetime-local" />
+              <div className="flex justify-end">
+                <SubmitButton pendingLabel="Link wird erstellt...">Invite-Link erstellen</SubmitButton>
+              </div>
+            </form>
+          ) : (
+            <p className="mt-3 text-sm text-muted-foreground">
+              Invite-Links bleiben hier ausgeblendet, bis die neue `team_invites`-Tabelle in Supabase vorhanden ist.
+            </p>
+          )}
         </Card>
       </section>
 
       <section className="space-y-4">
-        {invites.length > 0 ? (
+        {featureSupport.invites && invites.length > 0 ? (
           invites.map((invite) => (
             <InviteCard
               key={invite.id}
@@ -91,8 +102,10 @@ export default async function TeamSettingsPage({ params }: TeamSettingsPageProps
               toggleAction={toggleInviteAction.bind(null, team.id, invite.id, !invite.is_active)}
             />
           ))
-        ) : (
+        ) : featureSupport.invites ? (
           <Card className="p-8 text-center text-muted-foreground">Noch keine Invite-Links angelegt.</Card>
+        ) : (
+          <Card className="p-8 text-center text-muted-foreground">Invite-Verwaltung wird automatisch sichtbar, sobald die passende Supabase-Migration aktiv ist.</Card>
         )}
       </section>
     </div>

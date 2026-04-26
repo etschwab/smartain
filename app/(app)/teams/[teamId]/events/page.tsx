@@ -8,7 +8,8 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { EventCalendar } from "@/components/team/event-calendar";
 import { TeamTabs } from "@/components/team/team-tabs";
 import { managerRoles } from "@/lib/constants";
-import { getTeamById, listTeamEvents } from "@/lib/data";
+import { getTeamById, getTeamFeatureSupport, listTeamEvents } from "@/lib/data";
+import { isRecoverableSetupError } from "@/lib/supabase-errors";
 import { requireTeamAccess } from "@/lib/supabase-server";
 import { formatDateTimeLabel } from "@/lib/utils";
 
@@ -25,7 +26,11 @@ export default async function TeamEventsPage({ params, searchParams }: TeamEvent
   const { teamId } = await params;
   const filters = await searchParams;
   const { supabase, membership, user } = await requireTeamAccess(teamId, `/teams/${teamId}/events`);
-  const [team, events] = await Promise.all([getTeamById(supabase, teamId), listTeamEvents(supabase, teamId)]);
+  const [team, events, featureSupport] = await Promise.all([
+    getTeamById(supabase, teamId),
+    listTeamEvents(supabase, teamId),
+    getTeamFeatureSupport(supabase)
+  ]);
 
   if (!team) {
     notFound();
@@ -33,10 +38,20 @@ export default async function TeamEventsPage({ params, searchParams }: TeamEvent
 
   const canManage = managerRoles.includes(membership.role);
   const eventIds = events.map((event) => event.id);
-  const { data: myResponses } =
-    eventIds.length > 0
-      ? await supabase.from("event_responses").select("*").in("event_id", eventIds).eq("user_id", user.id)
-      : { data: [] };
+  let myResponses: Array<{ event_id: string; status: string }> = [];
+
+  if (eventIds.length > 0) {
+    const { data, error } = await supabase.from("event_responses").select("*").in("event_id", eventIds).eq("user_id", user.id);
+
+    if (!isRecoverableSetupError(error)) {
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      myResponses = (data as Array<{ event_id: string; status: string }>) ?? [];
+    }
+  }
+
   const responseMap = new Map(((myResponses as Array<{ event_id: string; status: string }>) ?? []).map((response) => [response.event_id, response.status]));
   const view = filters.view === "calendar" ? "calendar" : "list";
 
@@ -56,7 +71,7 @@ export default async function TeamEventsPage({ params, searchParams }: TeamEvent
             <Button asChild variant={view === "calendar" ? "primary" : "secondary"} size="sm">
               <Link href={`/teams/${team.id}/events?view=calendar`}>Kalender</Link>
             </Button>
-            {canManage ? (
+            {canManage && featureSupport.events ? (
               <Button asChild>
                 <Link href={`/teams/${team.id}/events/new`}>
                   <CalendarPlus className="h-4 w-4" />
@@ -71,7 +86,12 @@ export default async function TeamEventsPage({ params, searchParams }: TeamEvent
         </div>
       </Card>
 
-      {events.length === 0 ? (
+      {!featureSupport.events ? (
+        <EmptyState
+          title="Terminmodul wird vorbereitet"
+          description="In deiner aktuellen Supabase-Struktur fehlt noch die neue `events`-Tabelle. Deshalb bleibt die Terminplanung hier bewusst deaktiviert."
+        />
+      ) : events.length === 0 ? (
         <EmptyState
           title="Noch keine Termine erstellt"
           description="Plane euer erstes Training, Spiel oder Meeting direkt im Teamkalender."

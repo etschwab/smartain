@@ -9,7 +9,7 @@ import { StatsCard } from "@/components/stats-card";
 import { InviteCard } from "@/components/team/invite-card";
 import { TeamTabs } from "@/components/team/team-tabs";
 import { createInviteAction, regenerateInviteAction, toggleInviteAction } from "@/lib/actions";
-import { listTeamEvents, listTeamInvites, listTeamMembersDetailed, listTeamTasks, getTeamById } from "@/lib/data";
+import { getTeamById, getTeamFeatureSupport, listTeamEvents, listTeamInvites, listTeamMembersDetailed, listTeamTasks } from "@/lib/data";
 import { managerRoles } from "@/lib/constants";
 import { getRequestOrigin } from "@/lib/request";
 import { requireTeamAccess } from "@/lib/supabase-server";
@@ -24,13 +24,14 @@ type TeamPageProps = {
 export default async function TeamOverviewPage({ params }: TeamPageProps) {
   const { teamId } = await params;
   const { supabase, membership } = await requireTeamAccess(teamId, `/teams/${teamId}`);
-  const [team, members, events, tasks, invites, origin] = await Promise.all([
+  const [team, members, events, tasks, invites, origin, featureSupport] = await Promise.all([
     getTeamById(supabase, teamId),
     listTeamMembersDetailed(supabase, teamId),
     listTeamEvents(supabase, teamId),
     listTeamTasks(supabase, teamId),
     listTeamInvites(supabase, teamId),
-    getRequestOrigin()
+    getRequestOrigin(),
+    getTeamFeatureSupport(supabase)
   ]);
 
   if (!team) {
@@ -60,9 +61,11 @@ export default async function TeamOverviewPage({ params }: TeamPageProps) {
           <div className="flex flex-wrap gap-3">
             {canManage ? (
               <>
-                <Button asChild>
-                  <Link href={`/teams/${team.id}/events/new`}>Training erstellen</Link>
-                </Button>
+                {featureSupport.events ? (
+                  <Button asChild>
+                    <Link href={`/teams/${team.id}/events/new`}>Training erstellen</Link>
+                  </Button>
+                ) : null}
                 <Button asChild variant="secondary">
                   <Link href={`/teams/${team.id}/settings`}>
                     <Settings className="h-4 w-4" />
@@ -83,13 +86,21 @@ export default async function TeamOverviewPage({ params }: TeamPageProps) {
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[1.1fr,0.9fr]">
-        {activeInvite && canManage ? (
+        {featureSupport.invites && activeInvite && canManage ? (
           <InviteCard
             invite={activeInvite}
             absoluteUrl={`${origin}${buildJoinPath(activeInvite.code)}`}
             regenerateAction={regenerateInviteAction.bind(null, team.id, activeInvite.id)}
             toggleAction={toggleInviteAction.bind(null, team.id, activeInvite.id, !activeInvite.is_active)}
           />
+        ) : !featureSupport.invites ? (
+          <Card className="p-6">
+            <p className="section-kicker">Einladungen</p>
+            <h2 className="mt-2 text-2xl font-semibold">Invite-Links werden noch vorbereitet</h2>
+            <p className="mt-3 text-muted-foreground">
+              Team-Erstellung und Mitgliederbereich laufen bereits. Fuer Join-Links fehlt in Supabase noch die neue Invite-Tabelle, daher blenden wir die Funktion hier vorerst aus.
+            </p>
+          </Card>
         ) : (
           <Card className="p-6">
             <p className="section-kicker">Einladungen</p>
@@ -115,7 +126,9 @@ export default async function TeamOverviewPage({ params }: TeamPageProps) {
           <p className="section-kicker">Team-Feed</p>
           <h2 className="mt-2 text-2xl font-semibold">Naechste Termine</h2>
           <div className="mt-5 space-y-3">
-            {upcomingEvents.length > 0 ? (
+            {!featureSupport.events ? (
+              <p className="text-sm text-muted-foreground">Das Terminmodul wird eingeblendet, sobald die fehlende Supabase-Tabelle verfuegbar ist.</p>
+            ) : upcomingEvents.length > 0 ? (
               upcomingEvents.map((event) => (
                 <Link
                   key={event.id}
@@ -183,6 +196,13 @@ export default async function TeamOverviewPage({ params }: TeamPageProps) {
                   <p className="mt-2 text-sm text-muted-foreground">{task.description ?? "Keine Zusatzinfos"}</p>
                 </div>
               ))
+            ) : !featureSupport.tasks ? (
+              <div className="rounded-3xl border border-dashed border-border bg-background/40 p-5">
+                <p className="font-semibold">Aufgabenmodul wird vorbereitet</p>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Die Aufgabenansicht wird automatisch aktiv, sobald die neue Aufgaben-Tabelle in Supabase vorhanden ist.
+                </p>
+              </div>
             ) : (
               <EmptyState
                 title="Noch keine Aufgaben"

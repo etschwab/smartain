@@ -56,6 +56,31 @@ function normalizeMembership(membership: Partial<TeamMember> & { id: string; tea
   };
 }
 
+async function supportsTable(supabase: AppSupabaseClient, table: string, columns = "id") {
+  const { error } = await supabase.from(table).select(columns).limit(1);
+
+  if (isRecoverableSetupError(error)) {
+    return false;
+  }
+
+  assertNoError(error, `${table} konnte nicht geprueft werden`);
+  return true;
+}
+
+export async function getTeamFeatureSupport(supabase: AppSupabaseClient) {
+  const [invites, events, tasks] = await Promise.all([
+    supportsTable(supabase, "team_invites"),
+    supportsTable(supabase, "events"),
+    supportsTable(supabase, "tasks")
+  ]);
+
+  return {
+    invites,
+    events,
+    tasks
+  };
+}
+
 export async function getProfilesMap(supabase: AppSupabaseClient, userIds: string[]) {
   const ids = unique(userIds.filter(Boolean));
 

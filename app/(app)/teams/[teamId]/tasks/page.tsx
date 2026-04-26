@@ -9,7 +9,7 @@ import { ConfirmSubmit } from "@/components/confirm-submit";
 import { TeamTabs } from "@/components/team/team-tabs";
 import { createTaskAction, deleteTaskAction, updateTaskStatusAction } from "@/lib/actions";
 import { managerRoles } from "@/lib/constants";
-import { listTeamEvents, listTeamMembersDetailed, listTeamTasks, getTeamById } from "@/lib/data";
+import { getTeamById, getTeamFeatureSupport, listTeamEvents, listTeamMembersDetailed, listTeamTasks } from "@/lib/data";
 import { requireTeamAccess } from "@/lib/supabase-server";
 import { formatDateTimeLabel } from "@/lib/utils";
 
@@ -22,11 +22,12 @@ type TeamTasksPageProps = {
 export default async function TeamTasksPage({ params }: TeamTasksPageProps) {
   const { teamId } = await params;
   const { supabase, membership } = await requireTeamAccess(teamId, `/teams/${teamId}/tasks`);
-  const [team, members, events, tasks] = await Promise.all([
+  const [team, members, events, tasks, featureSupport] = await Promise.all([
     getTeamById(supabase, teamId),
     listTeamMembersDetailed(supabase, teamId),
     listTeamEvents(supabase, teamId),
-    listTeamTasks(supabase, teamId)
+    listTeamTasks(supabase, teamId),
+    getTeamFeatureSupport(supabase)
   ]);
 
   if (!team) {
@@ -46,7 +47,7 @@ export default async function TeamTasksPage({ params }: TeamTasksPageProps) {
         </div>
       </Card>
 
-      {canManage ? (
+      {canManage && featureSupport.tasks ? (
         <Card className="p-6">
           <p className="section-kicker">Neue Aufgabe</p>
           <h2 className="mt-2 text-2xl font-semibold">Checkliste erweitern</h2>
@@ -77,10 +78,20 @@ export default async function TeamTasksPage({ params }: TeamTasksPageProps) {
             </div>
           </form>
         </Card>
+      ) : canManage ? (
+        <Card className="p-6">
+          <p className="section-kicker">Aufgabenmodul</p>
+          <h2 className="mt-2 text-2xl font-semibold">Wird vorbereitet</h2>
+          <p className="mt-3 text-sm text-muted-foreground">
+            Fuer Aufgaben fehlt in Supabase aktuell noch die `tasks`-Tabelle. Deshalb zeigen wir hier bewusst kein kaputtes Formular an.
+          </p>
+        </Card>
       ) : null}
 
       <div className="space-y-4">
-        {tasks.length > 0 ? (
+        {!featureSupport.tasks ? (
+          <Card className="p-8 text-center text-muted-foreground">Die Aufgabenliste wird automatisch aktiv, sobald das neue Tasks-Modul in Supabase verfuegbar ist.</Card>
+        ) : tasks.length > 0 ? (
           tasks.map((task) => (
             <Card key={task.id} className="p-6">
               <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">

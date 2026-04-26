@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { requireProfile, requireTeamAccess, requireTeamManager } from "@/lib/supabase-server";
+import { isRecoverableSetupError } from "@/lib/supabase-errors";
 
 function getString(formData: FormData, name: string) {
   return String(formData.get(name) ?? "").trim();
@@ -37,6 +38,10 @@ export async function createTaskAction(teamId: string, formData: FormData) {
     .single();
 
   if (error) {
+    if (isRecoverableSetupError(error)) {
+      redirect(`/teams/${teamId}/tasks?toast=database-setup-needed`);
+    }
+
     throw new Error(error.message);
   }
 
@@ -52,6 +57,10 @@ export async function createTaskAction(teamId: string, formData: FormData) {
     });
 
     if (notificationError) {
+      if (isRecoverableSetupError(notificationError)) {
+        redirect(`/teams/${teamId}/tasks?toast=task-created`);
+      }
+
       throw new Error(notificationError.message);
     }
   }
@@ -65,6 +74,10 @@ export async function updateTaskStatusAction(teamId: string, taskId: string, for
   const { data: task, error: taskError } = await supabase.from("tasks").select("*").eq("id", taskId).single();
 
   if (taskError) {
+    if (isRecoverableSetupError(taskError)) {
+      redirect(`/teams/${teamId}/tasks?toast=database-setup-needed`);
+    }
+
     throw new Error(taskError.message);
   }
 
@@ -81,6 +94,10 @@ export async function updateTaskStatusAction(teamId: string, taskId: string, for
     .eq("id", taskId);
 
   if (error) {
+    if (isRecoverableSetupError(error)) {
+      redirect(`/teams/${teamId}/tasks?toast=database-setup-needed`);
+    }
+
     throw new Error(error.message);
   }
 
@@ -92,6 +109,10 @@ export async function deleteTaskAction(teamId: string, taskId: string) {
   const { error } = await supabase.from("tasks").delete().eq("id", taskId);
 
   if (error) {
+    if (isRecoverableSetupError(error)) {
+      redirect(`/teams/${teamId}/tasks?toast=database-setup-needed`);
+    }
+
     throw new Error(error.message);
   }
 

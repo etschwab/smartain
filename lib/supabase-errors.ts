@@ -23,6 +23,7 @@ export function isRecoverableSetupError(error: SupabaseLikeError) {
     ["42P01", "42703", "42501", "PGRST204", "PGRST205"].includes(code) ||
     /schema cache/i.test(message) ||
     /could not find the .* column/i.test(message) ||
+    /column .* does not exist/i.test(message) ||
     /could not find the table/i.test(message) ||
     /relation .* does not exist/i.test(message) ||
     /row-level security policy/i.test(message) ||

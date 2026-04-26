@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { requireProfile, requireTeamAccess, requireTeamManager } from "@/lib/supabase-server";
+import { isRecoverableSetupError } from "@/lib/supabase-errors";
 import { buildJoinPath } from "@/lib/utils";
 
 function getString(formData: FormData, name: string) {
@@ -44,6 +45,10 @@ async function createNotificationsForUsers(
   const { error } = await supabase.from("notifications").insert(rows);
 
   if (error) {
+    if (isRecoverableSetupError(error)) {
+      return;
+    }
+
     throw new Error(error.message);
   }
 }
@@ -79,17 +84,25 @@ export async function createEventAction(teamId: string, formData: FormData) {
     .single();
 
   if (error) {
+    if (isRecoverableSetupError(error)) {
+      redirect(`/teams/${teamId}/events?toast=database-setup-needed`);
+    }
+
     throw new Error(error.message);
   }
 
-  const { data: members, error: memberError } = await supabase
+  let membersResult = await supabase
     .from("team_members")
     .select("user_id")
     .eq("team_id", teamId)
     .eq("status", "active");
 
-  if (memberError) {
-    throw new Error(memberError.message);
+  if (isRecoverableSetupError(membersResult.error)) {
+    membersResult = await supabase.from("team_members").select("user_id").eq("team_id", teamId);
+  }
+
+  if (membersResult.error) {
+    throw new Error(membersResult.error.message);
   }
 
   const titlePrefix =
@@ -97,7 +110,7 @@ export async function createEventAction(teamId: string, formData: FormData) {
 
   await createNotificationsForUsers(
     supabase,
-    ((members as Array<{ user_id: string }>) ?? []).map((member) => member.user_id).filter((memberId) => memberId !== user.id),
+    (((membersResult.data as Array<{ user_id: string }>) ?? []).map((member) => member.user_id).filter((memberId) => memberId !== user.id)),
     {
       team_id: teamId,
       event_id: event.id,
@@ -133,22 +146,30 @@ export async function respondToEventAction(teamId: string, eventId: string, form
   );
 
   if (error) {
+    if (isRecoverableSetupError(error)) {
+      redirect(`/teams/${teamId}/events/${eventId}?toast=database-setup-needed`);
+    }
+
     throw new Error(error.message);
   }
 
-  const { data: managers, error: managersError } = await supabase
+  let managersResult = await supabase
     .from("team_members")
     .select("user_id, role")
     .eq("team_id", teamId)
     .eq("status", "active");
 
-  if (managersError) {
-    throw new Error(managersError.message);
+  if (isRecoverableSetupError(managersResult.error)) {
+    managersResult = await supabase.from("team_members").select("user_id, role").eq("team_id", teamId);
   }
 
-  const managerIds = ((managers as Array<{ user_id: string; role: string }>) ?? [])
+  if (managersResult.error) {
+    throw new Error(managersResult.error.message);
+  }
+
+  const managerIds = (((managersResult.data as Array<{ user_id: string; role: string }>) ?? [])
     .filter((member) => member.user_id !== user.id && (member.role === "owner" || member.role === "coach"))
-    .map((member) => member.user_id);
+    .map((member) => member.user_id));
 
   await createNotificationsForUsers(supabase, managerIds, {
     team_id: teamId,
