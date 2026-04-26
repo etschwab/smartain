@@ -81,6 +81,21 @@ as $$
   select coalesce(public.team_role_for(target_team_id, target_user_id) in ('owner', 'coach'), false);
 $$;
 
+create or replace function public.can_insert_initial_owner(target_team_id uuid, target_user_id uuid default auth.uid())
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists(
+    select 1
+    from public.teams t
+    where t.id = target_team_id
+      and coalesce(t.created_by, t.owner_id) = target_user_id
+  );
+$$;
+
 create or replace function public.create_team_with_owner(
   team_name text,
   team_sport text,
@@ -309,7 +324,14 @@ create policy "team_members_insert_manager_or_creator"
 on public.team_members
 for insert
 to authenticated
-with check (public.is_team_manager(team_id) or auth.uid() = user_id);
+with check (
+  public.is_team_manager(team_id)
+  or (
+    auth.uid() = user_id
+    and role = 'owner'
+    and public.can_insert_initial_owner(team_id, user_id)
+  )
+);
 
 drop policy if exists "team_invites_public_select_active" on public.team_invites;
 create policy "team_invites_public_select_active"
