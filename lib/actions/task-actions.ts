@@ -1,8 +1,8 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { requireProfile, requireTeamAccess, requireTeamManager } from "@/lib/supabase-server";
-import { isRecoverableSetupError } from "@/lib/supabase-errors";
+import { requireTeamAccess, requireTeamManager } from "@/lib/supabase-server";
+import { getUserFacingSupabaseError, isRecoverableSetupError } from "@/lib/supabase-errors";
 
 function getString(formData: FormData, name: string) {
   return String(formData.get(name) ?? "").trim();
@@ -18,7 +18,7 @@ export async function createTaskAction(teamId: string, formData: FormData) {
 
   const title = getString(formData, "title");
   if (!title) {
-    throw new Error("Bitte gib einen Titel fuer die Aufgabe ein.");
+    throw new Error("Bitte gib einen Titel für die Aufgabe ein.");
   }
 
   const assignedTo = getNullableString(formData, "assigned_to");
@@ -38,11 +38,7 @@ export async function createTaskAction(teamId: string, formData: FormData) {
     .single();
 
   if (error) {
-    if (isRecoverableSetupError(error)) {
-      redirect(`/teams/${teamId}/tasks?toast=database-setup-needed`);
-    }
-
-    throw new Error(error.message);
+    throw new Error(getUserFacingSupabaseError(error, "Die Aufgabe konnte nicht erstellt werden."));
   }
 
   if (assignedTo) {
@@ -61,7 +57,7 @@ export async function createTaskAction(teamId: string, formData: FormData) {
         redirect(`/teams/${teamId}/tasks?toast=task-created`);
       }
 
-      throw new Error(notificationError.message);
+      throw new Error(getUserFacingSupabaseError(notificationError, "Die Benachrichtigung konnte nicht erstellt werden."));
     }
   }
 
@@ -74,15 +70,11 @@ export async function updateTaskStatusAction(teamId: string, taskId: string, for
   const { data: task, error: taskError } = await supabase.from("tasks").select("*").eq("id", taskId).single();
 
   if (taskError) {
-    if (isRecoverableSetupError(taskError)) {
-      redirect(`/teams/${teamId}/tasks?toast=database-setup-needed`);
-    }
-
-    throw new Error(taskError.message);
+    throw new Error(getUserFacingSupabaseError(taskError, "Die Aufgabe konnte nicht geladen werden."));
   }
 
   if (!(membership.role === "owner" || membership.role === "coach" || task.assigned_to === user.id)) {
-    throw new Error("Du darfst diesen Aufgabenstatus nicht aendern.");
+    throw new Error("Du darfst diesen Aufgabenstatus nicht ändern.");
   }
 
   const { error } = await supabase
@@ -94,11 +86,7 @@ export async function updateTaskStatusAction(teamId: string, taskId: string, for
     .eq("id", taskId);
 
   if (error) {
-    if (isRecoverableSetupError(error)) {
-      redirect(`/teams/${teamId}/tasks?toast=database-setup-needed`);
-    }
-
-    throw new Error(error.message);
+    throw new Error(getUserFacingSupabaseError(error, "Der Aufgabenstatus konnte nicht gespeichert werden."));
   }
 
   redirect(`/teams/${teamId}/tasks?toast=task-updated`);
@@ -109,11 +97,7 @@ export async function deleteTaskAction(teamId: string, taskId: string) {
   const { error } = await supabase.from("tasks").delete().eq("id", taskId);
 
   if (error) {
-    if (isRecoverableSetupError(error)) {
-      redirect(`/teams/${teamId}/tasks?toast=database-setup-needed`);
-    }
-
-    throw new Error(error.message);
+    throw new Error(getUserFacingSupabaseError(error, "Die Aufgabe konnte nicht gelöscht werden."));
   }
 
   redirect(`/teams/${teamId}/tasks?toast=task-removed`);

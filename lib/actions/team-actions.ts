@@ -1,9 +1,9 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { requireProfile, requireTeamAccess, requireTeamManager } from "@/lib/supabase-server";
-import { managerRoles } from "@/lib/constants";
-import { isRecoverableSetupError } from "@/lib/supabase-errors";
+import { requireProfile, requireTeamManager, requireTeamOwner } from "@/lib/supabase-server";
+import { managerRoles, MAX_OWNED_TEAMS } from "@/lib/constants";
+import { getUserFacingSupabaseError, isRecoverableSetupError } from "@/lib/supabase-errors";
 
 function getString(formData: FormData, name: string) {
   return String(formData.get(name) ?? "").trim();
@@ -28,7 +28,7 @@ async function createTeamInviteInternal(
     .single();
 
   if (teamError) {
-    throw new Error(teamError.message);
+    throw new Error(getUserFacingSupabaseError(teamError, "Das Team konnte nicht geladen werden."));
   }
 
   const teamName = typeof team.name === "string" && team.name ? team.name : "Team";
@@ -53,7 +53,7 @@ async function createTeamInviteInternal(
     .single();
 
   if (error) {
-    throw new Error(error.message);
+    throw new Error(getUserFacingSupabaseError(error, "Der Einladungslink konnte nicht erstellt werden."));
   }
 
   return invite;
@@ -79,7 +79,7 @@ async function countActiveOwners(
   }
 
   if (ownersResult.error) {
-    throw new Error(ownersResult.error.message);
+    throw new Error(getUserFacingSupabaseError(ownersResult.error, "Die Rollen im Team konnten nicht geprüft werden."));
   }
 
   return ownersResult.count ?? 0;
@@ -97,7 +97,7 @@ async function assertNotLastOwner(
     .single();
 
   if (memberError) {
-    throw new Error(memberError.message);
+    throw new Error(getUserFacingSupabaseError(memberError, "Das Teammitglied konnte nicht geladen werden."));
   }
 
   if (member.role !== "owner") {
@@ -117,10 +117,25 @@ export async function createTeamAction(formData: FormData) {
   const name = getString(formData, "name");
   const sport = getString(formData, "sport");
   const season = getString(formData, "season");
-  const themeColor = getString(formData, "theme_color") || "#4f46e5";
+  const themeColor = getString(formData, "theme_color") || "#115e59";
 
   if (!name || !sport || !season) {
-    throw new Error("Bitte fuelle Name, Sportart und Saison aus.");
+    throw new Error("Bitte fülle Name, Sportart und Saison aus.");
+  }
+
+  const ownedTeamsResult = await supabase
+    .from("team_members")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .eq("role", "owner")
+    .eq("status", "active");
+
+  if (ownedTeamsResult.error && !isRecoverableSetupError(ownedTeamsResult.error)) {
+    throw new Error(getUserFacingSupabaseError(ownedTeamsResult.error, "Die Teamgrenze konnte nicht geprüft werden."));
+  }
+
+  if ((ownedTeamsResult.count ?? 0) >= MAX_OWNED_TEAMS) {
+    redirect("/teams?toast=team-limit-reached");
   }
 
   let teamResult = await supabase
@@ -148,7 +163,7 @@ export async function createTeamAction(formData: FormData) {
   }
 
   if (teamResult.error) {
-    throw new Error(teamResult.error.message);
+    throw new Error(getUserFacingSupabaseError(teamResult.error, "Das Team konnte nicht erstellt werden."));
   }
 
   const team = teamResult.data;
@@ -169,7 +184,7 @@ export async function createTeamAction(formData: FormData) {
   }
 
   if (membershipResult.error) {
-    throw new Error(membershipResult.error.message);
+    throw new Error(getUserFacingSupabaseError(membershipResult.error, "Die Teamrolle konnte nicht erstellt werden."));
   }
 
   try {
@@ -184,18 +199,18 @@ export async function createTeamAction(formData: FormData) {
 }
 
 export async function updateTeamSettingsAction(teamId: string, formData: FormData) {
-  const { supabase } = await requireTeamManager(teamId, `/teams/${teamId}/settings`);
+  const { supabase } = await requireTeamOwner(teamId, `/teams/${teamId}/admin`);
 
   const payload = {
     name: getString(formData, "name"),
     sport: getString(formData, "sport"),
     season: getString(formData, "season"),
-    theme_color: getString(formData, "theme_color") || "#4f46e5",
+    theme_color: getString(formData, "theme_color") || "#115e59",
     logo_url: getNullableString(formData, "logo_url")
   };
 
   if (!payload.name || !payload.sport || !payload.season) {
-    throw new Error("Bitte fuelle Name, Sportart und Saison aus.");
+    throw new Error("Bitte fülle Name, Sportart und Saison aus.");
   }
 
   let updateResult = await supabase.from("teams").update(payload).eq("id", teamId);
@@ -211,106 +226,100 @@ export async function updateTeamSettingsAction(teamId: string, formData: FormDat
   }
 
   if (updateResult.error) {
-    throw new Error(updateResult.error.message);
+    throw new Error(getUserFacingSupabaseError(updateResult.error, "Die Teamdaten konnten nicht gespeichert werden."));
   }
 
-  redirect(`/teams/${teamId}/settings?toast=team-updated`);
+  redirect(`/teams/${teamId}/admin?toast=team-updated`);
 }
 
 export async function createInviteAction(teamId: string, formData: FormData) {
-  const { supabase, user } = await requireTeamManager(teamId, `/teams/${teamId}/settings`);
-  try {
-    await createTeamInviteInternal(
-      supabase,
-      teamId,
-      user.id,
-      getString(formData, "role") || "player",
-      getNullableString(formData, "expires_at")
-    );
-  } catch (error) {
-    if (isRecoverableSetupError(error instanceof Error ? error : String(error))) {
-      redirect(`/teams/${teamId}/settings?toast=database-setup-needed`);
-    }
+  const { supabase, user } = await requireTeamManager(teamId, `/teams/${teamId}`);
+  await createTeamInviteInternal(
+    supabase,
+    teamId,
+    user.id,
+    getString(formData, "role") || "player",
+    getNullableString(formData, "expires_at")
+  );
 
-    throw error;
-  }
-
-  redirect(`/teams/${teamId}/settings?toast=invite-created`);
+  redirect(`/teams/${teamId}?toast=invite-created`);
 }
 
 export async function regenerateInviteAction(teamId: string, inviteId: string) {
-  const { supabase, user } = await requireTeamManager(teamId, `/teams/${teamId}/settings`);
+  const { supabase, user } = await requireTeamManager(teamId, `/teams/${teamId}`);
   const { data: invite, error } = await supabase.from("team_invites").select("*").eq("id", inviteId).single();
 
   if (error) {
-    if (isRecoverableSetupError(error)) {
-      redirect(`/teams/${teamId}/settings?toast=database-setup-needed`);
-    }
-
-    throw new Error(error.message);
+    throw new Error(getUserFacingSupabaseError(error, "Der Einladungslink konnte nicht geladen werden."));
   }
 
   const { error: disableError } = await supabase.from("team_invites").update({ is_active: false }).eq("id", inviteId);
 
   if (disableError) {
-    if (isRecoverableSetupError(disableError)) {
-      redirect(`/teams/${teamId}/settings?toast=database-setup-needed`);
-    }
-
-    throw new Error(disableError.message);
+    throw new Error(getUserFacingSupabaseError(disableError, "Der Einladungslink konnte nicht aktualisiert werden."));
   }
 
-  try {
-    await createTeamInviteInternal(supabase, teamId, user.id, invite.role, invite.expires_at);
-  } catch (setupError) {
-    if (isRecoverableSetupError(setupError instanceof Error ? setupError : String(setupError))) {
-      redirect(`/teams/${teamId}/settings?toast=database-setup-needed`);
-    }
+  await createTeamInviteInternal(supabase, teamId, user.id, invite.role, invite.expires_at);
 
-    throw setupError;
-  }
-
-  redirect(`/teams/${teamId}/settings?toast=invite-regenerated`);
+  redirect(`/teams/${teamId}?toast=invite-regenerated`);
 }
 
 export async function toggleInviteAction(teamId: string, inviteId: string, nextActive: boolean) {
-  const { supabase } = await requireTeamManager(teamId, `/teams/${teamId}/settings`);
+  const { supabase } = await requireTeamManager(teamId, `/teams/${teamId}`);
   const { error } = await supabase.from("team_invites").update({ is_active: nextActive }).eq("id", inviteId);
 
   if (error) {
-    if (isRecoverableSetupError(error)) {
-      redirect(`/teams/${teamId}/settings?toast=database-setup-needed`);
-    }
-
-    throw new Error(error.message);
+    throw new Error(getUserFacingSupabaseError(error, "Der Einladungslink konnte nicht geändert werden."));
   }
 
-  redirect(`/teams/${teamId}/settings?toast=invite-updated`);
+  redirect(`/teams/${teamId}?toast=invite-updated`);
 }
 
 export async function joinTeamAction(inviteCode: string) {
-  const { supabase } = await requireProfile(`/join/${inviteCode}`);
+  const { supabase, user, profile } = await requireProfile(`/join/${inviteCode}`);
   const { data, error } = await supabase.rpc("join_team_with_invite", {
     invite_code: inviteCode
   });
 
   if (error) {
-    if (isRecoverableSetupError(error)) {
-      redirect("/teams?toast=database-setup-needed");
-    }
-
-    throw new Error(error.message);
+    throw new Error(getUserFacingSupabaseError(error, "Der Teambeitritt konnte nicht abgeschlossen werden."));
   }
 
-  redirect(`/teams/${data}?toast=joined-team`);
+  const teamId = String(data);
+  const managersResult = await supabase
+    .from("team_members")
+    .select("user_id, role")
+    .eq("team_id", teamId)
+    .eq("status", "active");
+
+  if (!managersResult.error) {
+    const managerIds = ((managersResult.data as Array<{ user_id: string; role: string }> | null) ?? [])
+      .filter((member) => member.user_id !== user.id && managerRoles.includes(member.role as (typeof managerRoles)[number]))
+      .map((member) => member.user_id);
+
+    if (managerIds.length > 0) {
+      await supabase.from("notifications").insert(
+        managerIds.map((managerId) => ({
+          user_id: managerId,
+          team_id: teamId,
+          type: "member_joined",
+          title: "Neues Teammitglied",
+          body: `${profile.full_name ?? profile.email ?? "Ein Mitglied"} ist dem Team beigetreten.`,
+          action_path: `/teams/${teamId}/members`
+        }))
+      );
+    }
+  }
+
+  redirect(`/teams/${teamId}?toast=joined-team`);
 }
 
 export async function updateMemberRoleAction(teamId: string, memberId: string, formData: FormData) {
-  const { supabase } = await requireTeamManager(teamId, `/teams/${teamId}/members`);
+  const { supabase } = await requireTeamOwner(teamId, `/teams/${teamId}/admin`);
   const role = getString(formData, "role");
 
   if (!role) {
-    throw new Error("Bitte waehle eine Rolle.");
+    throw new Error("Bitte wähle eine Rolle.");
   }
 
   const member = await assertNotLastOwner(supabase, teamId, memberId);
@@ -324,21 +333,21 @@ export async function updateMemberRoleAction(teamId: string, memberId: string, f
   const { error } = await supabase.from("team_members").update({ role }).eq("id", memberId);
 
   if (error) {
-    throw new Error(error.message);
+    throw new Error(getUserFacingSupabaseError(error, "Die Rolle konnte nicht gespeichert werden."));
   }
 
-  redirect(`/teams/${teamId}/members?toast=member-updated`);
+  redirect(`/teams/${teamId}/admin?toast=member-updated`);
 }
 
 export async function removeMemberAction(teamId: string, memberId: string) {
-  const { supabase } = await requireTeamManager(teamId, `/teams/${teamId}/members`);
+  const { supabase } = await requireTeamOwner(teamId, `/teams/${teamId}/admin`);
   await assertNotLastOwner(supabase, teamId, memberId);
 
   const { error } = await supabase.from("team_members").delete().eq("id", memberId);
 
   if (error) {
-    throw new Error(error.message);
+    throw new Error(getUserFacingSupabaseError(error, "Das Mitglied konnte nicht entfernt werden."));
   }
 
-  redirect(`/teams/${teamId}/members?toast=member-removed`);
+  redirect(`/teams/${teamId}/admin?toast=member-removed`);
 }

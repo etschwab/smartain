@@ -66,7 +66,7 @@ create table if not exists public.teams (
   sport text not null default 'Football',
   season text not null default to_char(current_date, 'YYYY'),
   logo_url text,
-  theme_color text not null default '#4f46e5',
+  theme_color text not null default '#115e59',
   created_by uuid references auth.users(id) on delete set null,
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now())
@@ -83,7 +83,7 @@ update public.teams
 set
   sport = coalesce(nullif(sport, ''), 'Football'),
   season = coalesce(nullif(season, ''), to_char(current_date, 'YYYY')),
-  theme_color = coalesce(nullif(theme_color, ''), '#4f46e5')
+  theme_color = coalesce(nullif(theme_color, ''), '#115e59')
 where sport is null
    or season is null
    or theme_color is null;
@@ -92,7 +92,7 @@ alter table public.teams alter column sport set default 'Football';
 alter table public.teams alter column sport set not null;
 alter table public.teams alter column season set default to_char(current_date, 'YYYY');
 alter table public.teams alter column season set not null;
-alter table public.teams alter column theme_color set default '#4f46e5';
+alter table public.teams alter column theme_color set default '#115e59';
 alter table public.teams alter column theme_color set not null;
 
 create table if not exists public.team_members (

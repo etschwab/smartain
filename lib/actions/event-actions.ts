@@ -2,8 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { requireProfile, requireTeamAccess, requireTeamManager } from "@/lib/supabase-server";
-import { isRecoverableSetupError } from "@/lib/supabase-errors";
-import { buildJoinPath } from "@/lib/utils";
+import { getUserFacingSupabaseError, isRecoverableSetupError } from "@/lib/supabase-errors";
 
 function getString(formData: FormData, name: string) {
   return String(formData.get(name) ?? "").trim();
@@ -49,7 +48,7 @@ async function createNotificationsForUsers(
       return;
     }
 
-    throw new Error(error.message);
+    throw new Error(getUserFacingSupabaseError(error, "Die Benachrichtigungen konnten nicht erstellt werden."));
   }
 }
 
@@ -61,7 +60,7 @@ export async function createEventAction(teamId: string, formData: FormData) {
   const endsAt = getString(formData, "ends_at");
 
   if (!title || !type || !startsAt || !endsAt) {
-    throw new Error("Bitte fuelle alle Pflichtfelder fuer den Termin aus.");
+    throw new Error("Bitte fülle alle Pflichtfelder für den Termin aus.");
   }
 
   if (new Date(endsAt).getTime() <= new Date(startsAt).getTime()) {
@@ -84,11 +83,7 @@ export async function createEventAction(teamId: string, formData: FormData) {
     .single();
 
   if (error) {
-    if (isRecoverableSetupError(error)) {
-      redirect(`/teams/${teamId}/events?toast=database-setup-needed`);
-    }
-
-    throw new Error(error.message);
+    throw new Error(getUserFacingSupabaseError(error, "Der Termin konnte nicht erstellt werden."));
   }
 
   let membersResult = await supabase
@@ -102,7 +97,7 @@ export async function createEventAction(teamId: string, formData: FormData) {
   }
 
   if (membersResult.error) {
-    throw new Error(membersResult.error.message);
+    throw new Error(getUserFacingSupabaseError(membersResult.error, "Die Teammitglieder konnten nicht geladen werden."));
   }
 
   const titlePrefix =
@@ -124,12 +119,59 @@ export async function createEventAction(teamId: string, formData: FormData) {
   redirect(`/teams/${teamId}/events/${event.id}?toast=event-created`);
 }
 
+export async function updateEventAction(teamId: string, eventId: string, formData: FormData) {
+  const { supabase, user } = await requireTeamManager(teamId, `/teams/${teamId}/events/${eventId}`);
+  const title = getString(formData, "title");
+  const type = getString(formData, "type");
+  const startsAt = getString(formData, "starts_at");
+  const endsAt = getString(formData, "ends_at");
+
+  if (!title || !type || !startsAt || !endsAt) {
+    throw new Error("Bitte fülle alle Pflichtfelder für den Termin aus.");
+  }
+
+  if (new Date(endsAt).getTime() <= new Date(startsAt).getTime()) {
+    throw new Error("Die Endzeit muss nach der Startzeit liegen.");
+  }
+
+  const { error } = await supabase
+    .from("events")
+    .update({
+      title,
+      type,
+      starts_at: new Date(startsAt).toISOString(),
+      ends_at: new Date(endsAt).toISOString(),
+      location: getNullableString(formData, "location"),
+      description: getNullableString(formData, "description"),
+      created_by: user.id
+    })
+    .eq("id", eventId)
+    .eq("team_id", teamId);
+
+  if (error) {
+    throw new Error(getUserFacingSupabaseError(error, "Der Termin konnte nicht gespeichert werden."));
+  }
+
+  redirect(`/teams/${teamId}/events/${eventId}?toast=event-updated`);
+}
+
+export async function deleteEventAction(teamId: string, eventId: string) {
+  const { supabase } = await requireTeamManager(teamId, `/teams/${teamId}/events/${eventId}`);
+  const { error } = await supabase.from("events").delete().eq("id", eventId).eq("team_id", teamId);
+
+  if (error) {
+    throw new Error(getUserFacingSupabaseError(error, "Der Termin konnte nicht gelöscht werden."));
+  }
+
+  redirect(`/teams/${teamId}/events?toast=event-removed`);
+}
+
 export async function respondToEventAction(teamId: string, eventId: string, formData: FormData) {
   const { supabase, profile, user } = await requireTeamAccess(teamId, `/teams/${teamId}/events/${eventId}`);
   const status = getString(formData, "status");
 
   if (!status) {
-    throw new Error("Bitte waehle eine Antwort aus.");
+    throw new Error("Bitte wähle eine Antwort aus.");
   }
 
   const { error } = await supabase.from("event_responses").upsert(
@@ -146,11 +188,7 @@ export async function respondToEventAction(teamId: string, eventId: string, form
   );
 
   if (error) {
-    if (isRecoverableSetupError(error)) {
-      redirect(`/teams/${teamId}/events/${eventId}?toast=database-setup-needed`);
-    }
-
-    throw new Error(error.message);
+    throw new Error(getUserFacingSupabaseError(error, "Die Rückmeldung konnte nicht gespeichert werden."));
   }
 
   let managersResult = await supabase
@@ -164,7 +202,7 @@ export async function respondToEventAction(teamId: string, eventId: string, form
   }
 
   if (managersResult.error) {
-    throw new Error(managersResult.error.message);
+    throw new Error(getUserFacingSupabaseError(managersResult.error, "Die Teamleitung konnte nicht geladen werden."));
   }
 
   const managerIds = (((managersResult.data as Array<{ user_id: string; role: string }>) ?? [])
@@ -175,7 +213,7 @@ export async function respondToEventAction(teamId: string, eventId: string, form
     team_id: teamId,
     event_id: eventId,
     type: "response_submitted",
-    title: "Neue Rueckmeldung",
+    title: "Neue Rückmeldung",
     body: `${profile.full_name ?? profile.email ?? "Mitglied"} hat auf einen Termin geantwortet.`,
     action_path: `/teams/${teamId}/events/${eventId}`
   });

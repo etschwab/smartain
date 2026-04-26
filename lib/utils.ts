@@ -2,6 +2,14 @@ import { clsx, type ClassValue } from "clsx";
 import { format, isToday, isTomorrow } from "date-fns";
 import { de } from "date-fns/locale";
 import { twMerge } from "tailwind-merge";
+import {
+  eventTypeLabels,
+  memberStatusLabels,
+  responseStatusLabels,
+  taskStatusLabels,
+  teamRoleLabels
+} from "./constants";
+import type { EventType, MemberStatus, ResponseStatus, TaskStatus, TeamRole } from "./types";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -56,4 +64,32 @@ export function getDisplayName(name?: string | null, fallback?: string | null) {
 
 export function isFutureDate(value: string | Date) {
   return new Date(value).getTime() > Date.now();
+}
+
+export function getRoleLabel(role: TeamRole) {
+  return teamRoleLabels[role] ?? role;
+}
+
+export function getMemberStatusLabel(status: MemberStatus) {
+  return memberStatusLabels[status] ?? status;
+}
+
+export function getEventTypeLabel(type: EventType) {
+  return eventTypeLabels[type] ?? type;
+}
+
+export function getResponseStatusLabel(status: ResponseStatus) {
+  return responseStatusLabels[status] ?? status;
+}
+
+export function getTaskStatusLabel(status: TaskStatus) {
+  return taskStatusLabels[status] ?? status;
+}
+
+export function toDateTimeLocalValue(value?: string | null) {
+  if (!value) {
+    return "";
+  }
+
+  return format(new Date(value), "yyyy-MM-dd'T'HH:mm");
 }

@@ -10,5 +10,5 @@ export {
   updateMemberRoleAction,
   updateTeamSettingsAction
 } from "@/lib/actions/team-actions";
-export { createEventAction, respondToEventAction } from "@/lib/actions/event-actions";
+export { createEventAction, deleteEventAction, respondToEventAction, updateEventAction } from "@/lib/actions/event-actions";
 export { createTaskAction, deleteTaskAction, updateTaskStatusAction } from "@/lib/actions/task-actions";

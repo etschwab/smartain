@@ -20,7 +20,7 @@ export default function AppError({
       <p className="section-kicker">Fehler</p>
       <h2 className="mt-3 text-3xl font-semibold">Etwas ist schiefgelaufen.</h2>
       <p className="mt-3 text-muted-foreground">
-        Bitte versuche die Aktion erneut. Wenn das Problem bleibt, pruefe zuerst das aktuelle Supabase-Schema.
+        Bitte versuche die Aktion erneut. Wenn das Problem bleibt, prüfe die betroffenen Eingaben oder melde dich erneut an.
       </p>
       <div className="mt-6 flex justify-center">
         <Button onClick={() => reset()}>Erneut versuchen</Button>

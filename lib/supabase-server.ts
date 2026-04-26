@@ -194,7 +194,17 @@ export async function requireTeamManager(teamId: string, nextPath?: string) {
   const context = await requireTeamAccess(teamId, nextPath);
 
   if (!managerRoles.includes(context.membership.role)) {
-    throw new Error("Du hast fuer diese Aktion keine Berechtigung.");
+    throw new Error("Du hast für diese Aktion keine Berechtigung.");
+  }
+
+  return context;
+}
+
+export async function requireTeamOwner(teamId: string, nextPath?: string) {
+  const context = await requireTeamAccess(teamId, nextPath);
+
+  if (context.membership.role !== "owner") {
+    throw new Error("Nur der Owner darf diesen Bereich verwalten.");
   }
 
   return context;

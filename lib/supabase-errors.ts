@@ -30,3 +30,11 @@ export function isRecoverableSetupError(error: SupabaseLikeError) {
     /permission denied/i.test(message)
   );
 }
+
+export function getUserFacingSupabaseError(error: SupabaseLikeError, fallback: string) {
+  if (isRecoverableSetupError(error)) {
+    return fallback;
+  }
+
+  return getSupabaseErrorMessage(error) || fallback;
+}

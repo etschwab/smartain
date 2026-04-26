@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { requireProfile } from "@/lib/supabase-server";
-import { isRecoverableSetupError } from "@/lib/supabase-errors";
+import { getUserFacingSupabaseError, isRecoverableSetupError } from "@/lib/supabase-errors";
 
 function getString(formData: FormData, name: string) {
   return String(formData.get(name) ?? "").trim();
@@ -26,37 +26,40 @@ function getNullableNumber(formData: FormData, name: string) {
 
 export async function updateProfileAction(formData: FormData) {
   const { supabase, user } = await requireProfile("/dashboard");
-  const fullName = getNullableString(formData, "full_name");
+  const payload = {
+    id: user.id,
+    full_name: getNullableString(formData, "full_name"),
+    phone: getNullableString(formData, "phone"),
+    jersey_number: getNullableNumber(formData, "jersey_number"),
+    position: getNullableString(formData, "position"),
+    birthday: getNullableString(formData, "birthday"),
+    emergency_contact_name: getNullableString(formData, "emergency_contact_name"),
+    emergency_contact_phone: getNullableString(formData, "emergency_contact_phone"),
+    email: user.email ?? null
+  };
 
   const payloads = [
+    payload,
     {
-      full_name: fullName,
-      phone: getNullableString(formData, "phone"),
-      jersey_number: getNullableNumber(formData, "jersey_number"),
-      position: getNullableString(formData, "position"),
-      birthday: getNullableString(formData, "birthday"),
-      emergency_contact_name: getNullableString(formData, "emergency_contact_name"),
-      emergency_contact_phone: getNullableString(formData, "emergency_contact_phone"),
-      email: user.email ?? null
+      id: user.id,
+      full_name: payload.full_name,
+      email: payload.email
     },
     {
-      full_name: fullName,
-      email: user.email ?? null
-    },
-    {
-      full_name: fullName
+      id: user.id,
+      full_name: payload.full_name
     }
   ] as const;
 
-  for (const payload of payloads) {
-    const { error } = await supabase.from("profiles").update(payload).eq("id", user.id);
+  for (const entry of payloads) {
+    const { error } = await supabase.from("profiles").upsert(entry, { onConflict: "id" });
 
     if (!error) {
       redirect("/dashboard?toast=profile-updated");
     }
 
     if (!isRecoverableSetupError(error)) {
-      throw new Error(error.message);
+      throw new Error(getUserFacingSupabaseError(error, "Das Profil konnte nicht gespeichert werden."));
     }
   }
 
@@ -72,7 +75,7 @@ export async function markNotificationsReadAction() {
   }
 
   if (error) {
-    throw new Error(error.message);
+    throw new Error(getUserFacingSupabaseError(error, "Die Benachrichtigungen konnten nicht aktualisiert werden."));
   }
 
   redirect("/dashboard?toast=notifications-read");

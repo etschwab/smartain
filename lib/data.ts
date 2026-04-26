@@ -36,7 +36,7 @@ function normalizeTeam(team: Partial<Team> & { id: string; name: string }): Team
     sport: team.sport ?? "Sport",
     season: team.season ?? ("age_group" in team && typeof team.age_group === "string" ? team.age_group : "Aktuelle Saison"),
     logo_url: team.logo_url ?? null,
-    theme_color: team.theme_color ?? "#3b82f6",
+    theme_color: team.theme_color ?? "#115e59",
     created_by: team.created_by ?? null,
     created_at: team.created_at ?? new Date().toISOString(),
     updated_at: team.updated_at ?? team.created_at ?? new Date().toISOString()
@@ -63,7 +63,7 @@ async function supportsTable(supabase: AppSupabaseClient, table: string, columns
     return false;
   }
 
-  assertNoError(error, `${table} konnte nicht geprueft werden`);
+  assertNoError(error, `${table} konnte nicht geprüft werden`);
   return true;
 }
 

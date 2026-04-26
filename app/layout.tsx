@@ -1,18 +1,7 @@
 import "./globals.css";
 import type { Metadata, Viewport } from "next";
-import { JetBrains_Mono, Manrope } from "next/font/google";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { ToastProvider } from "@/components/providers/toast-provider";
-
-const manrope = Manrope({
-  subsets: ["latin"],
-  variable: "--font-sans"
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
-  variable: "--font-mono"
-});
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://smartain.vercel.app"),
@@ -20,24 +9,20 @@ export const metadata: Metadata = {
     default: "SmarTrain",
     template: "%s | SmarTrain"
   },
-  description: "Moderne Team-Management- und Trainings-App fuer Coaches, Spieler und Eltern.",
+  description: "Moderne Team-Management- und Trainings-App für Coaches, Spieler und Eltern.",
   manifest: "/manifest.webmanifest"
 };
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f8f3eb" },
+    { media: "(prefers-color-scheme: light)", color: "#f8fafc" },
     { media: "(prefers-color-scheme: dark)", color: "#050505" }
   ]
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html
-      lang="de"
-      suppressHydrationWarning
-      className={`${manrope.variable} ${jetbrainsMono.variable}`}
-    >
+    <html lang="de" suppressHydrationWarning>
       <head>
         <script
           id="smartrain-theme"

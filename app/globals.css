@@ -4,43 +4,45 @@
 
 @layer base {
   :root {
-    --background: 41 47% 96%;
-    --foreground: 222 47% 11%;
+    --font-sans: "Aptos", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+    --font-mono: "Cascadia Mono", "SFMono-Regular", Consolas, ui-monospace, monospace;
+    --background: 210 20% 98%;
+    --foreground: 215 28% 11%;
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
-    --primary: 208 92% 55%;
+    --card-foreground: 215 28% 11%;
+    --primary: 210 11% 15%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222 47% 11%;
-    --muted: 210 38% 93%;
-    --muted-foreground: 222 20% 36%;
-    --accent: 208 100% 96%;
-    --accent-foreground: 211 82% 42%;
-    --border: 214 32% 88%;
-    --input: 214 32% 88%;
-    --ring: 208 92% 55%;
-    --destructive: 0 76% 56%;
+    --secondary: 210 15% 94%;
+    --secondary-foreground: 215 28% 11%;
+    --muted: 210 16% 93%;
+    --muted-foreground: 215 12% 39%;
+    --accent: 198 34% 92%;
+    --accent-foreground: 204 38% 22%;
+    --border: 214 20% 86%;
+    --input: 214 20% 86%;
+    --ring: 212 18% 32%;
+    --destructive: 0 72% 50%;
     --destructive-foreground: 0 0% 100%;
   }
 
   .dark {
-    --background: 240 18% 4%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 18% 8%;
-    --primary: 271 91% 65%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 240 12% 13%;
-    --secondary-foreground: 0 0% 96%;
-    --muted: 240 10% 16%;
-    --muted-foreground: 240 12% 74%;
-    --accent: 271 63% 18%;
-    --accent-foreground: 275 100% 92%;
-    --border: 240 7% 19%;
-    --input: 240 7% 19%;
-    --ring: 271 91% 65%;
-    --destructive: 0 73% 57%;
-    --destructive-foreground: 0 0% 98%;
+    --background: 210 27% 9%;
+    --foreground: 48 33% 96%;
+    --card: 214 24% 13%;
+    --card-foreground: 48 33% 96%;
+    --primary: 165 72% 45%;
+    --primary-foreground: 210 27% 9%;
+    --secondary: 214 22% 18%;
+    --secondary-foreground: 48 33% 96%;
+    --muted: 215 18% 19%;
+    --muted-foreground: 214 12% 73%;
+    --accent: 164 31% 18%;
+    --accent-foreground: 160 52% 84%;
+    --border: 214 15% 24%;
+    --input: 214 15% 24%;
+    --ring: 165 72% 45%;
+    --destructive: 0 70% 55%;
+    --destructive-foreground: 48 33% 96%;
   }
 
   * {
@@ -52,15 +54,16 @@
   }
 
   body {
+    background-color: hsl(var(--background));
     background-image:
-      radial-gradient(circle at top, rgba(59, 130, 246, 0.11), transparent 34%),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.7), transparent);
+      linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(245, 247, 250, 0.82) 42%, rgba(255, 255, 255, 0.98)),
+      linear-gradient(90deg, rgba(15, 23, 42, 0.035), transparent 18%, transparent 82%, rgba(15, 23, 42, 0.035));
   }
 
   .dark body {
     background-image:
-      radial-gradient(circle at top, rgba(139, 92, 246, 0.22), transparent 36%),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent);
+      linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(15, 23, 42, 0.24) 44%, rgba(0, 0, 0, 0.1)),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.035), transparent 18%, transparent 82%, rgba(255, 255, 255, 0.035));
   }
 
   a {
@@ -75,14 +78,29 @@
 
 @layer components {
   .surface-shell {
-    @apply rounded-[32px] border border-border/80 bg-background/80 backdrop-blur;
+    @apply rounded-[32px] border border-border/80 bg-background shadow-[0_22px_80px_-40px_rgba(15,23,42,0.5)] backdrop-blur;
   }
 
   .section-kicker {
-    @apply text-xs font-semibold uppercase tracking-[0.28em] text-primary;
+    @apply text-[11px] font-semibold uppercase text-primary;
   }
 
   .content-wrap {
     @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+
+  .page-stack {
+    @apply space-y-8 lg:space-y-10;
+  }
+
+  .glass-panel {
+    @apply rounded-[30px] border border-border/80 bg-card shadow-[0_26px_70px_-34px_rgba(15,23,42,0.45)] backdrop-blur-sm;
+  }
+
+  .subtle-grid {
+    background-image:
+      linear-gradient(to right, hsl(var(--border) / 0.22) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(var(--border) / 0.22) 1px, transparent 1px);
+    background-size: 24px 24px;
   }
 }

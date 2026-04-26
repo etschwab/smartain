@@ -12,7 +12,7 @@ type ShareInviteButtonProps = {
 export function ShareInviteButton({ url, title }: ShareInviteButtonProps) {
   async function handleShare() {
     if (!navigator.share) {
-      toast.info("Teilen wird auf diesem Geraet nicht direkt unterstuetzt.");
+      toast.info("Teilen wird auf diesem Gerät nicht direkt unterstützt.");
       return;
     }
 

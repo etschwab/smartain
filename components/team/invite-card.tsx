@@ -4,7 +4,7 @@ import { ConfirmSubmit } from "@/components/confirm-submit";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { buildJoinPath, formatDateTimeLabel } from "@/lib/utils";
+import { buildJoinPath, formatDateTimeLabel, getRoleLabel } from "@/lib/utils";
 import type { TeamInvite } from "@/lib/types";
 
 type InviteCardProps = {
@@ -16,8 +16,8 @@ type InviteCardProps = {
 
 export function InviteCard({ invite, absoluteUrl, regenerateAction, toggleAction }: InviteCardProps) {
   return (
-    <Card className="p-6">
-      <div className="flex flex-col gap-4">
+    <Card className="overflow-hidden p-6">
+      <div className="flex flex-col gap-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="section-kicker">Einladungslink</p>
@@ -25,9 +25,13 @@ export function InviteCard({ invite, absoluteUrl, regenerateAction, toggleAction
           </div>
           <Badge variant={invite.is_active ? "success" : "muted"}>{invite.is_active ? "Aktiv" : "Pausiert"}</Badge>
         </div>
-        <div className="rounded-3xl border border-border bg-background/70 p-4 text-sm">
-          <p className="font-mono text-xs text-muted-foreground">{buildJoinPath(invite.code)}</p>
-          <p className="mt-2 font-semibold break-all">{absoluteUrl}</p>
+        <div className="rounded-[28px] border border-border bg-background/70 p-5 text-sm">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="outline">Code {invite.code}</Badge>
+            <Badge variant="outline">Rolle {getRoleLabel(invite.role)}</Badge>
+          </div>
+          <p className="mt-4 font-mono text-xs text-muted-foreground">{buildJoinPath(invite.code)}</p>
+          <p className="mt-2 break-all text-base font-semibold">{absoluteUrl}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <CopyInviteButton value={absoluteUrl} />
@@ -52,8 +56,8 @@ export function InviteCard({ invite, absoluteUrl, regenerateAction, toggleAction
           ) : null}
         </div>
         <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
-          <span>Rolle im Join-Flow: {invite.role}</span>
-          {invite.expires_at ? <span>Gueltig bis {formatDateTimeLabel(invite.expires_at)}</span> : <span>Ohne Ablauf</span>}
+          <span>Rolle im Join-Flow: {getRoleLabel(invite.role)}</span>
+          {invite.expires_at ? <span>Gültig bis {formatDateTimeLabel(invite.expires_at)}</span> : <span>Ohne Ablauf</span>}
           {invite.last_used_at ? <span>Zuletzt genutzt {formatDateTimeLabel(invite.last_used_at)}</span> : null}
         </div>
       </div>

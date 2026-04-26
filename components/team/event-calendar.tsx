@@ -2,7 +2,7 @@ import { eachDayOfInterval, endOfMonth, endOfWeek, format, isSameMonth, startOfM
 import { de } from "date-fns/locale";
 import { Card } from "@/components/ui/card";
 import type { EventRecord } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, getEventTypeLabel } from "@/lib/utils";
 
 type EventCalendarProps = {
   events: EventRecord[];
@@ -24,7 +24,7 @@ export function EventCalendar({ events }: EventCalendarProps) {
           <h3 className="text-xl font-semibold">{format(referenceDate, "MMMM yyyy", { locale: de })}</h3>
         </div>
       </div>
-      <div className="grid grid-cols-7 gap-2 text-center text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+      <div className="grid grid-cols-7 gap-2 text-center text-xs font-semibold uppercase text-muted-foreground">
         {["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"].map((weekday) => (
           <div key={weekday} className="py-2">
             {weekday}
@@ -47,7 +47,8 @@ export function EventCalendar({ events }: EventCalendarProps) {
               <div className="space-y-2">
                 {dayEvents.slice(0, 3).map((event) => (
                   <div key={event.id} className="rounded-2xl bg-primary/10 px-2 py-1 text-[11px] font-medium text-primary">
-                    {event.title}
+                    <div className="truncate">{event.title}</div>
+                    <div className="text-[10px] text-primary/80">{getEventTypeLabel(event.type)}</div>
                   </div>
                 ))}
                 {dayEvents.length > 3 ? (

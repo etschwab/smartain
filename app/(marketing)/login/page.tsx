@@ -12,7 +12,7 @@ type LoginPageProps = {
 };
 
 const errorMap: Record<string, string> = {
-  auth_callback_failed: "Der Login-Link konnte nicht bestaetigt werden. Bitte versuche es erneut."
+  auth_callback_failed: "Der Login-Link konnte nicht bestätigt werden. Bitte versuche es erneut."
 };
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
