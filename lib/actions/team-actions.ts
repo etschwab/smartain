@@ -218,8 +218,8 @@ export async function createTeamAction(formData: FormData) {
     .eq("role", "owner")
     .eq("status", "active");
 
-  if (ownedTeamsResult.error && !isRecoverableSetupError(ownedTeamsResult.error)) {
-    throw new Error(getUserFacingSupabaseError(ownedTeamsResult.error, "Die Teamgrenze konnte nicht geprüft werden."));
+  if (ownedTeamsResult.error) {
+    console.warn("Team limit check skipped because Supabase rejected the count query.", ownedTeamsResult.error);
   }
 
   if (!ownedTeamsResult.error && (ownedTeamsResult.count ?? 0) >= MAX_OWNED_TEAMS) {
@@ -240,9 +240,7 @@ export async function createTeamAction(formData: FormData) {
     try {
       await createTeamInviteInternal(supabase, teamId, user.id, "player", null);
     } catch (error) {
-      if (!isRecoverableSetupError(error instanceof Error ? error : String(error))) {
-        throw error;
-      }
+      console.warn("Initial invite creation skipped. The team was created successfully.", error);
     }
 
     redirect(`/teams/${teamId}?toast=team-created`);
@@ -304,9 +302,7 @@ export async function createTeamAction(formData: FormData) {
   try {
     await createTeamInviteInternal(supabase, team.id, user.id, "player", null);
   } catch (error) {
-    if (!isRecoverableSetupError(error instanceof Error ? error : String(error))) {
-      throw error;
-    }
+    console.warn("Initial invite creation skipped. The team was created successfully.", error);
   }
 
   redirect(`/teams/${team.id}?toast=team-created`);
