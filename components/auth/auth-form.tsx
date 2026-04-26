@@ -18,6 +18,8 @@ type AuthFormProps = {
   initialMessage?: string;
 };
 
+const authRedirectOrigin = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://smartain.vercel.app").trim().replace(/\/$/, "");
+
 export function AuthForm({ mode, nextPath, initialMessage }: AuthFormProps) {
   const router = useRouter();
   const [name, setName] = useState("");
@@ -30,6 +32,10 @@ export function AuthForm({ mode, nextPath, initialMessage }: AuthFormProps) {
 
   const targetPath = nextPath && nextPath.startsWith("/") ? nextPath : "/dashboard";
   const isSignup = mode === "signup";
+
+  function getEmailRedirectTo() {
+    return `${authRedirectOrigin}/auth/callback?next=${encodeURIComponent(targetPath)}`;
+  }
 
   function formatAuthError(message: string) {
     if (/invalid login credentials/i.test(message)) {
@@ -113,7 +119,7 @@ export function AuthForm({ mode, nextPath, initialMessage }: AuthFormProps) {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(targetPath)}`,
+          emailRedirectTo: getEmailRedirectTo(),
           data: {
             full_name: name.trim(),
             name: name.trim()
@@ -157,7 +163,7 @@ export function AuthForm({ mode, nextPath, initialMessage }: AuthFormProps) {
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(targetPath)}`
+          emailRedirectTo: getEmailRedirectTo()
         }
       });
 
