@@ -43,7 +43,7 @@ export function AuthForm({ mode, nextPath, initialMessage }: AuthFormProps) {
     }
 
     if (/email not confirmed/i.test(message)) {
-      return "Bitte bestätige zuerst deine E-Mail-Adresse.";
+      return "Dein Account wurde erstellt, aber Supabase verlangt aktuell noch eine E-Mail-Bestätigung. Bitte deaktiviere in Supabase Auth die Option „Confirm email“. Danach funktioniert der Login direkt.";
     }
 
     if (/password/i.test(message) && /characters/i.test(message)) {
@@ -119,7 +119,6 @@ export function AuthForm({ mode, nextPath, initialMessage }: AuthFormProps) {
         email,
         password,
         options: {
-          emailRedirectTo: getEmailRedirectTo(),
           data: {
             full_name: name.trim(),
             name: name.trim()
@@ -139,7 +138,21 @@ export function AuthForm({ mode, nextPath, initialMessage }: AuthFormProps) {
         return;
       }
 
-      setStatusMessage("Fast geschafft: Bitte bestätige jetzt deine E-Mail-Adresse.");
+      const loginResult = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (!loginResult.error) {
+        toast.success("Account erstellt");
+        router.replace(targetPath);
+        router.refresh();
+        return;
+      }
+
+      setStatusMessage(
+        "Account erstellt. Supabase verlangt in diesem Projekt noch eine E-Mail-Bestätigung. Deaktiviere in Supabase unter Authentication > Providers > Email die Option „Confirm email“, damit neue Accounts sofort nutzbar sind."
+      );
     } catch (error) {
       setErrorMessage(error instanceof Error ? formatAuthError(error.message) : "Etwas ist schiefgelaufen.");
     } finally {
