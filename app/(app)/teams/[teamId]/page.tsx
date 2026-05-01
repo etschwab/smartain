@@ -5,11 +5,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Select } from "@/components/ui/select";
 import { StatsCard } from "@/components/stats-card";
 import { InviteCard } from "@/components/team/invite-card";
 import { TeamTabs } from "@/components/team/team-tabs";
 import { createInviteAction, regenerateInviteAction, toggleInviteAction } from "@/lib/actions";
-import { managerRoles } from "@/lib/constants";
+import { createAdminClient } from "@/lib/supabase-admin";
+import { managerRoles, teamRoleOptions } from "@/lib/constants";
 import { getTeamById, listTeamEvents, listTeamInvites, listTeamMembersDetailed, listTeamTasks } from "@/lib/data";
 import { getRequestOrigin } from "@/lib/request";
 import { requireTeamAccess } from "@/lib/supabase-server";
@@ -24,12 +26,13 @@ type TeamPageProps = {
 export default async function TeamOverviewPage({ params }: TeamPageProps) {
   const { teamId } = await params;
   const { supabase, membership } = await requireTeamAccess(teamId, `/teams/${teamId}`);
+  const readSupabase = createAdminClient() ?? supabase;
   const [team, members, events, tasks, invites, origin] = await Promise.all([
-    getTeamById(supabase, teamId),
-    listTeamMembersDetailed(supabase, teamId),
-    listTeamEvents(supabase, teamId),
-    listTeamTasks(supabase, teamId),
-    listTeamInvites(supabase, teamId),
+    getTeamById(readSupabase, teamId),
+    listTeamMembersDetailed(readSupabase, teamId),
+    listTeamEvents(readSupabase, teamId),
+    listTeamTasks(readSupabase, teamId),
+    listTeamInvites(readSupabase, teamId),
     getRequestOrigin()
   ]);
 
@@ -105,11 +108,19 @@ export default async function TeamOverviewPage({ params }: TeamPageProps) {
                 : "Owner und Coaches können Einladungslinks verwalten."}
             </p>
             {canManage ? (
-              <form action={createInviteAction.bind(null, team.id)} className="mt-6 flex flex-wrap items-end gap-3">
-                <input type="hidden" name="role" value="player" />
-                <Button type="submit">Invite-Link erstellen</Button>
+              <form action={createInviteAction.bind(null, team.id)} className="mt-6 grid gap-3 sm:grid-cols-[1fr,auto] sm:items-end">
+                <Select name="role" defaultValue="player" aria-label="Rolle für Einladung">
+                  {teamRoleOptions
+                    .filter((role) => role.value !== "owner")
+                    .map((role) => (
+                      <option key={role.value} value={role.value}>
+                        {role.label}
+                      </option>
+                    ))}
+                </Select>
+                <Button type="submit">Einladungslink erstellen</Button>
                 <Button asChild variant="secondary">
-                  <Link href={`/teams/${team.id}/admin`}>Admin-Bereich öffnen</Link>
+                  <Link href={`/teams/${team.id}/admin`}>Mitglieder verwalten</Link>
                 </Button>
               </form>
             ) : null}

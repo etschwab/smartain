@@ -24,11 +24,10 @@ export function AppShell({ profile, teams, children }: AppShellProps) {
   const canCreateTeam = ownedTeamsCount < MAX_OWNED_TEAMS;
 
   return (
-    <div className="min-h-screen">
-      <header className="sticky top-0 z-40 border-b border-border/60 bg-background/90 backdrop-blur-xl">
-        <div className="content-wrap py-4">
-          <div className="glass-panel relative overflow-hidden px-4 py-4 sm:px-6">
-            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+    <div className="min-h-screen pb-24 lg:pb-0">
+      <header className="sticky top-0 z-40 bg-primary text-primary-foreground shadow-[0_18px_42px_-34px_rgba(0,0,0,0.55)]">
+        <div className="content-wrap py-3">
+          <div className="relative overflow-hidden rounded-[24px] bg-white/96 px-4 py-4 text-foreground shadow-[0_18px_42px_-34px_rgba(0,0,0,0.55)] sm:px-6">
             <div className="flex items-center justify-between gap-4">
               <Logo href="/dashboard" />
               <div className="hidden items-center gap-3 lg:flex">
@@ -62,7 +61,7 @@ export function AppShell({ profile, teams, children }: AppShellProps) {
               </div>
             </div>
 
-            <div className="mt-5 hidden flex-wrap items-center justify-between gap-3 border-t border-border/70 pt-4 lg:flex">
+            <div className="mt-4 hidden flex-wrap items-center justify-between gap-3 border-t border-border/70 pt-4 lg:flex">
               <div className="flex flex-wrap items-center gap-2">
                 {teams.length > 0 ? (
                   teams.map((team) => (
@@ -90,7 +89,7 @@ export function AppShell({ profile, teams, children }: AppShellProps) {
                 )}
               </div>
               <div className="flex items-center gap-2">
-                <div className="rounded-full border border-border bg-background/70 px-4 py-2 text-sm text-card-foreground">
+                <div className="rounded-full border border-border bg-background px-4 py-2 text-sm text-card-foreground">
                   {getDisplayName(profile.full_name, profile.email)}
                 </div>
                 <form action={signOutAction}>
@@ -174,7 +173,12 @@ export function AppShell({ profile, teams, children }: AppShellProps) {
           </div>
         </div>
       </header>
-      <main className="content-wrap py-8 lg:py-10">{children}</main>
+      <main className="content-wrap py-6 lg:py-8">{children}</main>
+      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-card/95 px-2 py-2 shadow-[0_-18px_36px_-30px_rgba(15,23,42,0.5)] backdrop-blur lg:hidden">
+        <div className="mx-auto max-w-xl">
+          <AppNavigation compact />
+        </div>
+      </div>
     </div>
   );
 }

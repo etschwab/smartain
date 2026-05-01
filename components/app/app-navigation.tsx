@@ -15,10 +15,11 @@ const items = [
 
 type AppNavigationProps = {
   direction?: "row" | "column";
+  compact?: boolean;
   onNavigate?: () => void;
 };
 
-export function AppNavigation({ direction = "row", onNavigate }: AppNavigationProps) {
+export function AppNavigation({ direction = "row", compact = false, onNavigate }: AppNavigationProps) {
   const pathname = usePathname();
 
   return (
@@ -42,12 +43,13 @@ export function AppNavigation({ direction = "row", onNavigate }: AppNavigationPr
             className={cn(
               "inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all",
               direction === "column" && "justify-between px-5 py-3",
+              compact && "flex-1 flex-col justify-center gap-1 rounded-2xl px-2 py-2 text-[11px] leading-none",
               isActive
                 ? "bg-primary text-primary-foreground shadow-[0_12px_28px_-18px_hsl(var(--primary)/0.85)]"
                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
             )}
           >
-            <Icon className="h-4 w-4" />
+            <Icon className={cn("h-4 w-4", compact && "h-5 w-5")} />
             {item.label}
           </Link>
         );

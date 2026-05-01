@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { createAdminClient } from "@/lib/supabase-admin";
 import { requireProfile, requireTeamManager, requireTeamOwner } from "@/lib/supabase-server";
 import { managerRoles, MAX_OWNED_TEAMS } from "@/lib/constants";
 import { getPublicInvite } from "@/lib/data";
@@ -31,22 +32,27 @@ async function createTeamInviteInternal(
   expiresAt: string | null
 ) {
   const code = createInviteCode();
-  const rpcInvite = await supabase.rpc("create_team_invite", {
-    target_team_id: teamId,
-    invite_code: code,
-    invite_role: role,
-    invite_expires_at: expiresAt
-  });
+  const adminSupabase = createAdminClient();
+  const writeClient = adminSupabase ?? supabase;
 
-  if (!rpcInvite.error) {
-    return rpcInvite.data;
+  if (!adminSupabase) {
+    const rpcInvite = await supabase.rpc("create_team_invite", {
+      target_team_id: teamId,
+      invite_code: code,
+      invite_role: role,
+      invite_expires_at: expiresAt
+    });
+
+    if (!rpcInvite.error) {
+      return rpcInvite.data;
+    }
+
+    if (!isRecoverableSetupError(rpcInvite.error)) {
+      throw new Error(getUserFacingSupabaseError(rpcInvite.error, "Der Einladungslink konnte nicht erstellt werden."));
+    }
   }
 
-  if (!isRecoverableSetupError(rpcInvite.error)) {
-    throw new Error(getUserFacingSupabaseError(rpcInvite.error, "Der Einladungslink konnte nicht erstellt werden."));
-  }
-
-  const { data: team, error: teamError } = await supabase
+  const { data: team, error: teamError } = await writeClient
     .from("teams")
     .select("*")
     .eq("id", teamId)
@@ -64,11 +70,12 @@ async function createTeamInviteInternal(
         ? team.age_group
         : "Team";
 
-  const { data: invite, error } = await supabase
+  const { data: invite, error } = await writeClient
     .from("team_invites")
     .insert({
       team_id: teamId,
       code,
+      token: code,
       team_name: teamName,
       team_sport: teamSport,
       role,
@@ -83,7 +90,7 @@ async function createTeamInviteInternal(
       throw new Error(getUserFacingSupabaseError(error, "Der Einladungslink konnte nicht erstellt werden."));
     }
 
-    const fallback = await supabase
+    const fallback = await writeClient
       .from("invites")
       .insert({
         team_id: teamId,
@@ -118,22 +125,34 @@ async function joinTeamWithInviteFallback(
   }
 
   const role = invite.role satisfies TeamRole;
-  const membership = await supabase
+  const existingMembership = await supabase
     .from("team_members")
-    .upsert(
-      {
-        team_id: invite.team_id,
-        user_id: userId,
-        role,
-        status: "active",
-        invited_by: invite.created_by
-      },
-      {
-        onConflict: "team_id,user_id"
-      }
-    )
-    .select("team_id")
-    .single();
+    .select("id")
+    .eq("team_id", invite.team_id)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  const membership = existingMembership.data
+    ? await supabase
+        .from("team_members")
+        .update({
+          status: "active",
+          invited_by: invite.created_by
+        })
+        .eq("id", existingMembership.data.id)
+        .select("team_id")
+        .single()
+    : await supabase
+        .from("team_members")
+        .insert({
+          team_id: invite.team_id,
+          user_id: userId,
+          role,
+          status: "active",
+          invited_by: invite.created_by
+        })
+        .select("team_id")
+        .single();
 
   if (membership.error) {
     throw new Error(getUserFacingSupabaseError(membership.error, "Der Teambeitritt konnte nicht abgeschlossen werden."));
@@ -362,13 +381,14 @@ export async function createInviteAction(teamId: string, formData: FormData) {
 
 export async function regenerateInviteAction(teamId: string, inviteId: string) {
   const { supabase, user } = await requireTeamManager(teamId, `/teams/${teamId}`);
-  const { data: invite, error } = await supabase.from("team_invites").select("*").eq("id", inviteId).single();
+  const writeClient = createAdminClient() ?? supabase;
+  const { data: invite, error } = await writeClient.from("team_invites").select("*").eq("id", inviteId).single();
 
   if (error) {
     throw new Error(getUserFacingSupabaseError(error, "Der Einladungslink konnte nicht geladen werden."));
   }
 
-  const { error: disableError } = await supabase.from("team_invites").update({ is_active: false }).eq("id", inviteId);
+  const { error: disableError } = await writeClient.from("team_invites").update({ is_active: false }).eq("id", inviteId);
 
   if (disableError) {
     throw new Error(getUserFacingSupabaseError(disableError, "Der Einladungslink konnte nicht aktualisiert werden."));
@@ -381,7 +401,8 @@ export async function regenerateInviteAction(teamId: string, inviteId: string) {
 
 export async function toggleInviteAction(teamId: string, inviteId: string, nextActive: boolean) {
   const { supabase } = await requireTeamManager(teamId, `/teams/${teamId}`);
-  const { error } = await supabase.from("team_invites").update({ is_active: nextActive }).eq("id", inviteId);
+  const writeClient = createAdminClient() ?? supabase;
+  const { error } = await writeClient.from("team_invites").update({ is_active: nextActive }).eq("id", inviteId);
 
   if (error) {
     throw new Error(getUserFacingSupabaseError(error, "Der Einladungslink konnte nicht geändert werden."));
@@ -392,26 +413,79 @@ export async function toggleInviteAction(teamId: string, inviteId: string, nextA
 
 export async function joinTeamAction(inviteCode: string) {
   const { supabase, user, profile } = await requireProfile(`/join/${inviteCode}`);
-  const { data, error } = await supabase.rpc("join_team_with_invite", {
-    invite_code: inviteCode
-  });
-
+  const adminSupabase = createAdminClient();
   let teamId: string;
 
-  if (error) {
-    if (!isRecoverableSetupError(error)) {
-      throw new Error(getUserFacingSupabaseError(error, "Der Teambeitritt konnte nicht abgeschlossen werden."));
-    }
-
-    const invite = await getPublicInvite(supabase, inviteCode);
+  if (adminSupabase) {
+    const invite = await getPublicInvite(adminSupabase, inviteCode);
 
     if (!invite) {
       throw new Error("Dieser Einladungslink ist ungültig oder abgelaufen.");
     }
 
-    teamId = await joinTeamWithInviteFallback(supabase, user.id, invite);
+    if (!invite.is_active || inviteIsExpired(invite)) {
+      throw new Error("Dieser Einladungslink ist nicht mehr aktiv.");
+    }
+
+    const existingMembership = await adminSupabase
+      .from("team_members")
+      .select("id")
+      .eq("team_id", invite.team_id)
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    const membership = existingMembership.data
+      ? await adminSupabase
+          .from("team_members")
+          .update({
+            status: "active",
+            invited_by: invite.created_by
+          })
+          .eq("id", existingMembership.data.id)
+          .select("team_id")
+          .single()
+      : await adminSupabase
+          .from("team_members")
+          .insert({
+            team_id: invite.team_id,
+            user_id: user.id,
+            role: invite.role,
+            status: "active",
+            invited_by: invite.created_by
+          })
+          .select("team_id")
+          .single();
+
+    if (membership.error) {
+      throw new Error(getUserFacingSupabaseError(membership.error, "Der Teambeitritt konnte nicht abgeschlossen werden."));
+    }
+
+    await adminSupabase
+      .from("team_invites")
+      .update({ last_used_at: new Date().toISOString() })
+      .eq("id", invite.id);
+
+    teamId = invite.team_id;
   } else {
-    teamId = String(data);
+    const { data, error } = await supabase.rpc("join_team_with_invite", {
+      invite_code: inviteCode
+    });
+
+    if (error) {
+      if (!isRecoverableSetupError(error)) {
+        throw new Error(getUserFacingSupabaseError(error, "Der Teambeitritt konnte nicht abgeschlossen werden."));
+      }
+
+      const invite = await getPublicInvite(supabase, inviteCode);
+
+      if (!invite) {
+        throw new Error("Dieser Einladungslink ist ungültig oder abgelaufen.");
+      }
+
+      teamId = await joinTeamWithInviteFallback(supabase, user.id, invite);
+    } else {
+      teamId = String(data);
+    }
   }
 
   const managersResult = await supabase

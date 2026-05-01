@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { joinTeamAction } from "@/lib/actions";
 import { getPublicInvite } from "@/lib/data";
+import { createAdminClient } from "@/lib/supabase-admin";
 import { getOptionalUser } from "@/lib/supabase-server";
 import { getRoleLabel } from "@/lib/utils";
 
@@ -20,7 +21,8 @@ type JoinPageProps = {
 export default async function JoinPage({ params }: JoinPageProps) {
   const { inviteCode } = await params;
   const { supabase, user } = await getOptionalUser();
-  const invite = await getPublicInvite(supabase, inviteCode);
+  const readSupabase = createAdminClient() ?? supabase;
+  const invite = await getPublicInvite(readSupabase, inviteCode);
 
   if (!invite || !invite.is_active) {
     return (
@@ -39,7 +41,7 @@ export default async function JoinPage({ params }: JoinPageProps) {
   }
 
   if (user) {
-    const { data: membership } = await supabase
+    const { data: membership } = await readSupabase
       .from("team_members")
       .select("team_id")
       .eq("team_id", invite.team_id)
