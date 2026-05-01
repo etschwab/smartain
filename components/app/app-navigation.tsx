@@ -8,9 +8,9 @@ import { cn } from "@/lib/utils";
 const items = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/teams", label: "Teams", icon: Users },
-  { href: "/dashboard#notifications", label: "Inbox", icon: Bell },
-  { href: "/dashboard#calendar", label: "Kalender", icon: CalendarDays },
-  { href: "/dashboard#profile", label: "Profil", icon: ShieldCheck }
+  { href: "/inbox", label: "Inbox", icon: Bell },
+  { href: "/calendar", label: "Kalender", icon: CalendarDays },
+  { href: "/profile", label: "Profil", icon: ShieldCheck }
 ];
 
 type AppNavigationProps = {
@@ -31,9 +31,7 @@ export function AppNavigation({ direction = "row", compact = false, onNavigate }
     >
       {items.map((item) => {
         const Icon = item.icon;
-        const isActive = item.href.startsWith("/dashboard#")
-          ? pathname === "/dashboard"
-          : pathname === item.href || pathname.startsWith(`${item.href}/`);
+        const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
 
         return (
           <Link

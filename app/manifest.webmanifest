@@ -4,7 +4,7 @@
   "description": "Moderne Team-Management- und Trainings-App für Sportteams.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f8fafc",
-  "theme_color": "#20242a",
+  "background_color": "#fbf6f3",
+  "theme_color": "#e11d48",
   "icons": []
 }

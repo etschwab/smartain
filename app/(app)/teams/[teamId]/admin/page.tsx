@@ -14,7 +14,7 @@ import { getRequestOrigin } from "@/lib/request";
 import { requireTeamOwner } from "@/lib/supabase-server";
 import { teamRoleOptions } from "@/lib/constants";
 import { getTeamById, listTeamInvites, listTeamMembersDetailed } from "@/lib/data";
-import { buildJoinPath, getMemberStatusLabel, getRoleLabel } from "@/lib/utils";
+import { buildJoinPath, getMemberStatusLabel, getRoleLabel, getTeamAccentColor } from "@/lib/utils";
 
 type TeamAdminPageProps = {
   params: Promise<{
@@ -38,6 +38,7 @@ export default async function TeamAdminPage({ params }: TeamAdminPageProps) {
 
   const activeInvites = invites.filter((invite) => invite.is_active).length;
   const ownerCount = members.filter((member) => member.role === "owner").length;
+  const teamAccent = getTeamAccentColor(team.theme_color);
 
   return (
     <div className="page-stack">
@@ -72,7 +73,7 @@ export default async function TeamAdminPage({ params }: TeamAdminPageProps) {
             <div className="grid gap-4 sm:grid-cols-[auto,1fr] sm:items-center">
               <div className="space-y-2">
                 <label className="text-sm font-semibold">Teamfarbe</label>
-                <Input name="theme_color" type="color" defaultValue={team.theme_color} className="h-14 w-20 p-2" />
+                <Input name="theme_color" type="color" defaultValue={teamAccent} className="h-14 w-20 p-2" />
               </div>
               <div className="rounded-[24px] border border-border bg-background/70 p-4 text-sm text-muted-foreground">
                 Owner-Rechte gelten für Farben, Namen, Mitgliederrollen und Invite-Verwaltung.

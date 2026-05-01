@@ -42,10 +42,17 @@ function normalizeTeam(team: Partial<Team> & { id: string; name: string }): Team
     sport: team.sport ?? "Sport",
     season: team.season ?? ("age_group" in team && typeof team.age_group === "string" ? team.age_group : "Aktuelle Saison"),
     logo_url: team.logo_url ?? null,
-    theme_color: team.theme_color ?? "#115e59",
+    theme_color: team.theme_color ?? "#dc2626",
     created_by: team.created_by ?? null,
     created_at: team.created_at ?? new Date().toISOString(),
     updated_at: team.updated_at ?? team.created_at ?? new Date().toISOString()
+  };
+}
+
+function emptyCalendarData(teams: TeamWithMembership[]) {
+  return {
+    teams,
+    events: [] as EventWithTeam[]
   };
 }
 
@@ -513,5 +520,57 @@ export async function getDashboardData(supabase: AppSupabaseClient, userId: stri
         response: null
       })) satisfies EventWithTeam[],
     assignedTasks
+  };
+}
+
+export async function getUserCalendarData(supabase: AppSupabaseClient, userId: string) {
+  const teams = await listUserTeams(supabase, userId);
+  const teamIds = teams.map((team) => team.id);
+
+  if (teamIds.length === 0) {
+    return emptyCalendarData(teams);
+  }
+
+  const { data: eventsData, error: eventsError } = await supabase
+    .from("events")
+    .select("*")
+    .in("team_id", teamIds)
+    .gte("starts_at", startOfDay(addDays(new Date(), -7)).toISOString())
+    .lte("starts_at", endOfDay(addDays(new Date(), 90)).toISOString())
+    .order("starts_at", { ascending: true });
+
+  if (isRecoverableSetupError(eventsError)) {
+    return emptyCalendarData(teams);
+  }
+
+  assertNoError(eventsError, "Kalender konnte nicht geladen werden");
+
+  const events = ((eventsData as EventRecord[]) ?? []) as EventRecord[];
+  const eventIds = events.map((event) => event.id);
+  let responses: EventResponseRecord[] = [];
+
+  if (eventIds.length > 0) {
+    const { data: responseData, error: responseError } = await supabase
+      .from("event_responses")
+      .select("*")
+      .eq("user_id", userId)
+      .in("event_id", eventIds);
+
+    if (!isRecoverableSetupError(responseError)) {
+      assertNoError(responseError, "Kalender-Antworten konnten nicht geladen werden");
+      responses = ((responseData as EventResponseRecord[]) ?? []) as EventResponseRecord[];
+    }
+  }
+
+  const teamMap = new Map(teams.map((team) => [team.id, team]));
+  const responseMap = new Map(responses.map((response) => [response.event_id, response]));
+
+  return {
+    teams,
+    events: events.map((event) => ({
+      ...event,
+      team: teamMap.get(event.team_id) ?? null,
+      response: responseMap.get(event.id) ?? null
+    })) satisfies EventWithTeam[]
   };
 }

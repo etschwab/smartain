@@ -25,7 +25,7 @@ function getNullableNumber(formData: FormData, name: string) {
 }
 
 export async function updateProfileAction(formData: FormData) {
-  const { supabase, user } = await requireProfile("/dashboard");
+  const { supabase, user } = await requireProfile("/profile");
   const payload = {
     id: user.id,
     full_name: getNullableString(formData, "full_name"),
@@ -55,7 +55,7 @@ export async function updateProfileAction(formData: FormData) {
     const { error } = await supabase.from("profiles").upsert(entry, { onConflict: "id" });
 
     if (!error) {
-      redirect("/dashboard?toast=profile-updated");
+      redirect("/profile?toast=profile-updated");
     }
 
     if (!isRecoverableSetupError(error)) {
@@ -63,20 +63,20 @@ export async function updateProfileAction(formData: FormData) {
     }
   }
 
-  redirect("/dashboard?toast=profile-updated");
+  redirect("/profile?toast=profile-updated");
 }
 
 export async function markNotificationsReadAction() {
-  const { supabase, user } = await requireProfile("/dashboard");
+  const { supabase, user } = await requireProfile("/inbox");
   const { error } = await supabase.from("notifications").update({ is_read: true }).eq("user_id", user.id).eq("is_read", false);
 
   if (isRecoverableSetupError(error)) {
-    redirect("/dashboard");
+    redirect("/inbox");
   }
 
   if (error) {
     throw new Error(getUserFacingSupabaseError(error, "Die Benachrichtigungen konnten nicht aktualisiert werden."));
   }
 
-  redirect("/dashboard?toast=notifications-read");
+  redirect("/inbox?toast=notifications-read");
 }

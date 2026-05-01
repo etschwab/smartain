@@ -15,7 +15,14 @@ import { managerRoles, teamRoleOptions } from "@/lib/constants";
 import { getTeamById, listTeamEvents, listTeamInvites, listTeamMembersDetailed, listTeamTasks } from "@/lib/data";
 import { getRequestOrigin } from "@/lib/request";
 import { requireTeamAccess } from "@/lib/supabase-server";
-import { buildJoinPath, formatDateTimeLabel, getEventTypeLabel, getRoleLabel, getTaskStatusLabel } from "@/lib/utils";
+import {
+  buildJoinPath,
+  formatDateTimeLabel,
+  getEventTypeLabel,
+  getRoleLabel,
+  getTaskStatusLabel,
+  getTeamAccentColor
+} from "@/lib/utils";
 
 type TeamPageProps = {
   params: Promise<{
@@ -45,6 +52,7 @@ export default async function TeamOverviewPage({ params }: TeamPageProps) {
   const activeInvite = invites.find((invite) => invite.is_active) ?? invites[0] ?? null;
   const upcomingEvents = events.slice(0, 4);
   const openTasks = tasks.filter((task) => task.status === "open").slice(0, 4);
+  const teamAccent = getTeamAccentColor(team.theme_color);
 
   return (
     <div className="page-stack">
@@ -52,7 +60,7 @@ export default async function TeamOverviewPage({ params }: TeamPageProps) {
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              <span className="h-4 w-4 rounded-full" style={{ backgroundColor: team.theme_color }} />
+              <span className="h-4 w-4 rounded-full" style={{ backgroundColor: teamAccent }} />
               <p className="section-kicker">{team.sport}</p>
             </div>
             <div>

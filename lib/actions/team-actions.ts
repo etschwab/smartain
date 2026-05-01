@@ -224,7 +224,7 @@ export async function createTeamAction(formData: FormData) {
   const name = getString(formData, "name");
   const sport = getString(formData, "sport");
   const season = getString(formData, "season");
-  const themeColor = getString(formData, "theme_color") || "#115e59";
+  const themeColor = getString(formData, "theme_color") || "#dc2626";
 
   if (!name || !sport || !season) {
     throw new Error("Bitte fülle Name, Sportart und Saison aus.");
@@ -334,7 +334,7 @@ export async function updateTeamSettingsAction(teamId: string, formData: FormDat
     name: getString(formData, "name"),
     sport: getString(formData, "sport"),
     season: getString(formData, "season"),
-    theme_color: getString(formData, "theme_color") || "#115e59",
+    theme_color: getString(formData, "theme_color") || "#dc2626",
     logo_url: getNullableString(formData, "logo_url")
   };
 

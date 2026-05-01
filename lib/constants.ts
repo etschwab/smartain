@@ -60,16 +60,16 @@ export const memberStatusLabels: Record<MemberStatus, string> = {
 };
 
 export const teamColorOptions = [
-  "#115e59",
-  "#0f766e",
-  "#0284c7",
-  "#1d4ed8",
-  "#047857",
-  "#65a30d",
-  "#d97706",
-  "#ea580c",
   "#dc2626",
-  "#1f2937"
+  "#e11d48",
+  "#b91c1c",
+  "#991b1b",
+  "#f97316",
+  "#ea580c",
+  "#7f1d1d",
+  "#be123c",
+  "#1f2937",
+  "#111827"
 ];
 
 export const toastMessages: Record<string, string> = {

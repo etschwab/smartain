@@ -11,6 +11,8 @@ import {
 } from "./constants";
 import type { EventType, MemberStatus, ResponseStatus, TaskStatus, TeamRole } from "./types";
 
+const legacyGreenTeamColors = new Set(["#115e59", "#0f766e", "#047857", "#16a34a", "#22c55e", "#65a30d"]);
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
@@ -60,6 +62,16 @@ export function getDisplayName(name?: string | null, fallback?: string | null) {
   }
 
   return "Unbekannt";
+}
+
+export function getTeamAccentColor(color?: string | null) {
+  const normalizedColor = color?.trim().toLowerCase();
+
+  if (!normalizedColor || legacyGreenTeamColors.has(normalizedColor)) {
+    return "#dc2626";
+  }
+
+  return color ?? "#dc2626";
 }
 
 export function isFutureDate(value: string | Date) {

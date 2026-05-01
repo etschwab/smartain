@@ -9,7 +9,7 @@ import { AppNavigation } from "@/components/app/app-navigation";
 import { Button } from "@/components/ui/button";
 import { signOutAction } from "@/lib/actions";
 import { MAX_OWNED_TEAMS } from "@/lib/constants";
-import { getDisplayName, getRoleLabel } from "@/lib/utils";
+import { getDisplayName, getRoleLabel, getTeamAccentColor } from "@/lib/utils";
 import type { Profile, TeamWithMembership } from "@/lib/types";
 
 type AppShellProps = {
@@ -25,9 +25,10 @@ export function AppShell({ profile, teams, children }: AppShellProps) {
 
   return (
     <div className="min-h-screen pb-24 lg:pb-0">
-      <header className="sticky top-0 z-40 bg-primary text-primary-foreground shadow-[0_18px_42px_-34px_rgba(0,0,0,0.55)]">
+      <header className="sticky top-0 z-40 border-b border-red-950/10 bg-[linear-gradient(135deg,#7f1d1d,#e11d48_52%,#fb7185)] text-white shadow-[0_22px_52px_-38px_rgba(127,29,29,0.75)] dark:border-white/10">
         <div className="content-wrap py-3">
-          <div className="relative overflow-hidden rounded-[24px] bg-white/96 px-4 py-4 text-foreground shadow-[0_18px_42px_-34px_rgba(0,0,0,0.55)] sm:px-6">
+          <div className="relative overflow-hidden rounded-[28px] border border-white/35 bg-white/94 px-4 py-4 text-foreground shadow-[0_24px_70px_-44px_rgba(127,29,29,0.65)] backdrop-blur-xl dark:border-white/10 dark:bg-card/88 sm:px-6">
+            <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/80 to-transparent" />
             <div className="flex items-center justify-between gap-4">
               <Logo href="/dashboard" />
               <div className="hidden items-center gap-3 lg:flex">
@@ -64,24 +65,28 @@ export function AppShell({ profile, teams, children }: AppShellProps) {
             <div className="mt-4 hidden flex-wrap items-center justify-between gap-3 border-t border-border/70 pt-4 lg:flex">
               <div className="flex flex-wrap items-center gap-2">
                 {teams.length > 0 ? (
-                  teams.map((team) => (
-                    <Link
-                      key={team.id}
-                      href={`/teams/${team.id}`}
-                      className="inline-flex items-center gap-2 rounded-full border border-border bg-background/80 px-4 py-2 text-sm font-medium text-card-foreground transition-transform hover:-translate-y-0.5"
-                      style={{
-                        boxShadow: `inset 0 0 0 1px ${team.theme_color}25`
-                      }}
-                    >
-                      <span
-                        className="h-2.5 w-2.5 rounded-full"
+                  teams.map((team) => {
+                    const teamAccent = getTeamAccentColor(team.theme_color);
+
+                    return (
+                      <Link
+                        key={team.id}
+                        href={`/teams/${team.id}`}
+                        className="inline-flex items-center gap-2 rounded-full border border-border bg-background/80 px-4 py-2 text-sm font-medium text-card-foreground transition-transform hover:-translate-y-0.5"
                         style={{
-                          backgroundColor: team.theme_color
+                          boxShadow: `inset 0 0 0 1px ${teamAccent}25`
                         }}
-                      />
-                      {team.name}
-                    </Link>
-                  ))
+                      >
+                        <span
+                          className="h-2.5 w-2.5 rounded-full"
+                          style={{
+                            backgroundColor: teamAccent
+                          }}
+                        />
+                        {team.name}
+                      </Link>
+                    );
+                  })
                 ) : (
                   <span className="rounded-full border border-dashed border-border px-4 py-2 text-sm text-muted-foreground">
                     Noch kein Team angelegt
@@ -134,28 +139,32 @@ export function AppShell({ profile, teams, children }: AppShellProps) {
                 </div>
                 <div className="space-y-2">
                   {teams.length > 0 ? (
-                    teams.map((team) => (
-                      <Link
-                        key={team.id}
-                        href={`/teams/${team.id}`}
-                        onClick={() => setMobileOpen(false)}
-                        className="flex items-center justify-between rounded-3xl border border-border bg-background/80 px-4 py-3"
-                      >
-                        <div className="flex items-center gap-3">
-                          <span
-                            className="h-3 w-3 rounded-full"
-                            style={{ backgroundColor: team.theme_color }}
-                          />
-                          <div>
-                            <p className="font-medium">{team.name}</p>
-                            <p className="text-xs text-muted-foreground">{team.sport}</p>
+                    teams.map((team) => {
+                      const teamAccent = getTeamAccentColor(team.theme_color);
+
+                      return (
+                        <Link
+                          key={team.id}
+                          href={`/teams/${team.id}`}
+                          onClick={() => setMobileOpen(false)}
+                          className="flex items-center justify-between rounded-3xl border border-border bg-background/80 px-4 py-3"
+                        >
+                          <div className="flex items-center gap-3">
+                            <span
+                              className="h-3 w-3 rounded-full"
+                              style={{ backgroundColor: teamAccent }}
+                            />
+                            <div>
+                              <p className="font-medium">{team.name}</p>
+                              <p className="text-xs text-muted-foreground">{team.sport}</p>
+                            </div>
                           </div>
-                        </div>
-                        <span className="text-xs font-semibold text-muted-foreground">
-                          {getRoleLabel(team.membership.role)}
-                        </span>
-                      </Link>
-                    ))
+                          <span className="text-xs font-semibold text-muted-foreground">
+                            {getRoleLabel(team.membership.role)}
+                          </span>
+                        </Link>
+                      );
+                    })
                   ) : (
                     <div className="rounded-3xl border border-dashed border-border px-4 py-4 text-sm text-muted-foreground">
                       Erstelle dein erstes Team und beginne direkt mit Einladungen und Trainings.
