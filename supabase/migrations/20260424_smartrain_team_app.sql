@@ -110,7 +110,17 @@ create table if not exists public.team_members (
 alter table public.team_members add column if not exists status public.member_status not null default 'active';
 alter table public.team_members add column if not exists invited_by uuid references auth.users(id) on delete set null;
 alter table public.team_members add column if not exists updated_at timestamptz not null default timezone('utc', now());
-alter table public.team_members alter column role type public.team_role using role::public.team_role;
+alter table public.team_members alter column role drop default;
+alter table public.team_members alter column role type public.team_role using (
+  case lower(role::text)
+    when 'owner' then 'owner'
+    when 'coach' then 'coach'
+    when 'parent' then 'parent'
+    else 'player'
+  end
+)::public.team_role;
+alter table public.team_members alter column role set default 'player'::public.team_role;
+alter table public.team_members alter column role set not null;
 
 create table if not exists public.team_invites (
   id uuid primary key default gen_random_uuid(),
