@@ -711,6 +711,74 @@ as $$
   select coalesce(public.team_role_for(target_team_id, target_user_id) = 'owner', false);
 $$;
 
+create or replace function public.create_team_with_owner(
+  team_name text,
+  team_sport text,
+  team_season text,
+  team_theme_color text default '#dc2626',
+  team_logo_url text default null
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  current_user_id uuid := auth.uid();
+  created_team_id uuid;
+begin
+  if current_user_id is null then
+    raise exception 'authentication_required';
+  end if;
+
+  if nullif(trim(team_name), '') is null
+     or nullif(trim(team_sport), '') is null
+     or nullif(trim(team_season), '') is null then
+    raise exception 'team_fields_required';
+  end if;
+
+  if (
+    select count(*)
+    from public.team_members tm
+    where tm.user_id = current_user_id
+      and tm.role = 'owner'
+      and tm.status = 'active'
+  ) >= 3 then
+    raise exception 'team_limit_reached';
+  end if;
+
+  insert into public.teams (
+    name,
+    sport,
+    season,
+    theme_color,
+    logo_url,
+    created_by,
+    owner_id,
+    color
+  )
+  values (
+    trim(team_name),
+    trim(team_sport),
+    trim(team_season),
+    coalesce(nullif(trim(team_theme_color), ''), '#dc2626'),
+    nullif(trim(team_logo_url), ''),
+    current_user_id,
+    current_user_id,
+    coalesce(nullif(trim(team_theme_color), ''), '#dc2626')
+  )
+  returning id into created_team_id;
+
+  insert into public.team_members (team_id, user_id, role, status, invited_by)
+  values (created_team_id, current_user_id, 'owner', 'active', current_user_id);
+
+  return created_team_id;
+end;
+$$;
+
+revoke all on function public.create_team_with_owner(text, text, text, text, text) from public;
+grant execute on function public.create_team_with_owner(text, text, text, text, text) to authenticated;
+
 drop policy if exists "teams_update_managers" on public.teams;
 drop policy if exists "teams_update_owner" on public.teams;
 create policy "teams_update_owner"

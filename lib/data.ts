@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { addDays, endOfDay, startOfDay } from "date-fns";
-import { isRecoverableSetupError } from "./supabase-errors";
+import { getUserFacingSupabaseError, isRecoverableSetupError } from "./supabase-errors";
 import type {
   EventRecord,
   EventResponseCounts,
@@ -27,7 +27,7 @@ type RawInvite = Partial<TeamInvite> & {
 
 function assertNoError(error: { message: string } | null, fallback: string) {
   if (error) {
-    throw new Error(`${fallback}: ${error.message}`);
+    throw new Error(getUserFacingSupabaseError(error, fallback));
   }
 }
 

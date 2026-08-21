@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { AuthForm } from "@/components/auth/auth-form";
 import { getOptionalUser } from "@/lib/supabase-server";
+import { dataServiceUnavailableMessage, isSupabaseConnectionError } from "@/lib/supabase-errors";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +12,7 @@ type SignupPageProps = {
 };
 
 export default async function SignupPage({ searchParams }: SignupPageProps) {
-  const { user } = await getOptionalUser();
+  const { user, authError } = await getOptionalUser();
 
   if (user) {
     redirect("/dashboard");
@@ -20,8 +21,12 @@ export default async function SignupPage({ searchParams }: SignupPageProps) {
   const params = await searchParams;
 
   return (
-    <main className="content-wrap py-12 sm:py-20">
-      <AuthForm mode="signup" nextPath={params.next} />
+    <main id="main-content" className="content-wrap py-12 sm:py-20">
+      <AuthForm
+        mode="signup"
+        nextPath={params.next}
+        initialMessage={isSupabaseConnectionError(authError) ? dataServiceUnavailableMessage : undefined}
+      />
     </main>
   );
 }

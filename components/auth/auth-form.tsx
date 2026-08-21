@@ -11,6 +11,7 @@ import { FormError } from "@/components/ui/form-error";
 import { Input } from "@/components/ui/input";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { createClient } from "@/lib/supabase-browser";
+import { getUserFacingSupabaseError } from "@/lib/supabase-errors";
 
 type AuthFormProps = {
   mode: "login" | "signup";
@@ -18,7 +19,7 @@ type AuthFormProps = {
   initialMessage?: string;
 };
 
-const authRedirectOrigin = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://smartain.vercel.app").trim().replace(/\/$/, "");
+const configuredSiteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, "");
 
 export function AuthForm({ mode, nextPath, initialMessage }: AuthFormProps) {
   const router = useRouter();
@@ -34,7 +35,22 @@ export function AuthForm({ mode, nextPath, initialMessage }: AuthFormProps) {
   const isSignup = mode === "signup";
 
   function getEmailRedirectTo() {
-    return `${authRedirectOrigin}/auth/callback?next=${encodeURIComponent(targetPath)}`;
+    let origin = window.location.origin;
+
+    if (configuredSiteUrl) {
+      try {
+        const configuredUrl = new URL(configuredSiteUrl);
+        const isLoopback = ["localhost", "127.0.0.1", "::1"].includes(configuredUrl.hostname);
+
+        if (process.env.NODE_ENV !== "production" || !isLoopback) {
+          origin = configuredUrl.origin;
+        }
+      } catch {
+        // Fall back to the origin that is actually serving the app.
+      }
+    }
+
+    return `${origin}/auth/callback?next=${encodeURIComponent(targetPath)}`;
   }
 
   function formatAuthError(message: string) {
@@ -43,7 +59,7 @@ export function AuthForm({ mode, nextPath, initialMessage }: AuthFormProps) {
     }
 
     if (/email not confirmed/i.test(message)) {
-      return "Dein Account wurde erstellt, aber Supabase verlangt aktuell noch eine E-Mail-Bestätigung. Bitte deaktiviere in Supabase Auth die Option „Confirm email“. Danach funktioniert der Login direkt.";
+      return "Bitte bestätige zuerst deine E-Mail-Adresse über den Link in deinem Postfach.";
     }
 
     if (/password/i.test(message) && /characters/i.test(message)) {
@@ -54,7 +70,7 @@ export function AuthForm({ mode, nextPath, initialMessage }: AuthFormProps) {
       return "Registrierung ist in Supabase aktuell deaktiviert.";
     }
 
-    return message || "Die Authentifizierung konnte nicht abgeschlossen werden.";
+    return getUserFacingSupabaseError(message, "Die Authentifizierung konnte nicht abgeschlossen werden.");
   }
 
   function validateForm() {
@@ -119,6 +135,7 @@ export function AuthForm({ mode, nextPath, initialMessage }: AuthFormProps) {
         email,
         password,
         options: {
+          emailRedirectTo: getEmailRedirectTo(),
           data: {
             full_name: name.trim(),
             name: name.trim()
@@ -151,7 +168,7 @@ export function AuthForm({ mode, nextPath, initialMessage }: AuthFormProps) {
       }
 
       setStatusMessage(
-        "Account erstellt. Supabase verlangt in diesem Projekt noch eine E-Mail-Bestätigung. Deaktiviere in Supabase unter Authentication > Providers > Email die Option „Confirm email“, damit neue Accounts sofort nutzbar sind."
+        "Account erstellt. Bitte prüfe dein Postfach und bestätige deine E-Mail-Adresse, bevor du dich einloggst."
       );
     } catch (error) {
       setErrorMessage(error instanceof Error ? formatAuthError(error.message) : "Etwas ist schiefgelaufen.");
@@ -290,6 +307,12 @@ export function AuthForm({ mode, nextPath, initialMessage }: AuthFormProps) {
           <div className="rounded-2xl border border-primary/15 bg-primary/10 px-4 py-3 text-sm text-foreground">
             {statusMessage}
           </div>
+        ) : null}
+
+        {isSignup ? (
+          <p className="text-xs leading-5 text-muted-foreground">
+            Mit der Registrierung bestätigst du, dass du die <Link href="/datenschutz" className="font-semibold text-primary underline underline-offset-4">Datenschutzhinweise</Link> gelesen hast.
+          </p>
         ) : null}
 
         <LoadingButton className="w-full" type="submit" isLoading={submitting} loadingLabel="Einen Moment...">

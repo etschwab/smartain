@@ -4,7 +4,11 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { managerRoles } from "./constants";
 import { getSupabaseAnonKey, getSupabaseUrl } from "./env";
-import { isRecoverableSetupError } from "./supabase-errors";
+import {
+  getUserFacingSupabaseError,
+  isRecoverableSetupError,
+  isSupabaseConnectionError
+} from "./supabase-errors";
 import type { Profile, TeamMember } from "./types";
 
 export async function createClient() {
@@ -28,17 +32,34 @@ export async function createClient() {
   });
 }
 
-function loginPath(nextPath?: string) {
-  return nextPath ? `/login?next=${encodeURIComponent(nextPath)}` : "/login";
+function loginPath(nextPath?: string, error?: string) {
+  const params = new URLSearchParams();
+
+  if (nextPath) {
+    params.set("next", nextPath);
+  }
+
+  if (error) {
+    params.set("error", error);
+  }
+
+  const query = params.toString();
+  return query ? `/login?${query}` : "/login";
 }
 
 export async function getOptionalUser() {
   const supabase = await createClient();
-  const {
-    data: { user }
-  } = await supabase.auth.getUser();
 
-  return { supabase, user };
+  try {
+    const {
+      data: { user },
+      error: authError
+    } = await supabase.auth.getUser();
+
+    return { supabase, user, authError };
+  } catch (authError) {
+    return { supabase, user: null, authError };
+  }
 }
 
 function normalizeProfile(raw: Partial<Profile> & { id: string }, user: User): Profile {
@@ -78,7 +99,7 @@ async function ensureProfile(supabase: Awaited<ReturnType<typeof createClient>>,
       return normalizeProfile({ id: user.id, email: user.email ?? null }, user);
     }
 
-    throw new Error(error.message);
+    throw new Error(getUserFacingSupabaseError(error, "Das Profil konnte nicht geladen werden."));
   }
 
   if (existingProfile) {
@@ -133,10 +154,10 @@ async function ensureProfile(supabase: Awaited<ReturnType<typeof createClient>>,
 }
 
 export async function requireProfile(nextPath?: string) {
-  const { supabase, user } = await getOptionalUser();
+  const { supabase, user, authError } = await getOptionalUser();
 
   if (!user) {
-    redirect(loginPath(nextPath));
+    redirect(loginPath(nextPath, isSupabaseConnectionError(authError) ? "backend_unavailable" : undefined));
   }
 
   const profile = await ensureProfile(supabase, user);
@@ -161,7 +182,7 @@ export async function getMembershipForUser(
     .maybeSingle();
 
   if (error) {
-    throw new Error(error.message);
+    throw new Error(getUserFacingSupabaseError(error, "Die Teamrolle konnte nicht geladen werden."));
   }
 
   return (data as TeamMember | null) ?? null;

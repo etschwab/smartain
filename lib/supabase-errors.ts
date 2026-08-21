@@ -1,22 +1,34 @@
-type SupabaseLikeError =
-  | {
-      code?: string;
-      message?: string;
-    }
-  | string
-  | null
-  | undefined;
+export const dataServiceUnavailableMessage =
+  "Der Smartrain-Datenservice ist aktuell nicht erreichbar. Prüfe die Supabase-URL und die Vercel-Umgebungsvariablen.";
 
-export function getSupabaseErrorMessage(error: SupabaseLikeError) {
+function getSupabaseErrorCode(error: unknown) {
+  if (!error || typeof error !== "object" || !("code" in error)) {
+    return "";
+  }
+
+  const code = (error as { code?: unknown }).code;
+  return typeof code === "string" ? code : "";
+}
+
+export function getSupabaseErrorMessage(error: unknown) {
   if (!error) {
     return "";
   }
 
-  return typeof error === "string" ? error : error.message ?? "";
+  if (typeof error === "string") {
+    return error;
+  }
+
+  if (typeof error === "object" && "message" in error) {
+    const message = (error as { message?: unknown }).message;
+    return typeof message === "string" ? message : "";
+  }
+
+  return "";
 }
 
-export function isRecoverableSetupError(error: SupabaseLikeError) {
-  const code = typeof error === "string" ? "" : error?.code ?? "";
+export function isRecoverableSetupError(error: unknown) {
+  const code = getSupabaseErrorCode(error);
   const message = getSupabaseErrorMessage(error);
 
   return (
@@ -34,7 +46,24 @@ export function isRecoverableSetupError(error: SupabaseLikeError) {
   );
 }
 
-export function getUserFacingSupabaseError(error: SupabaseLikeError, fallback: string) {
+export function isSupabaseConnectionError(error: unknown) {
+  const code = getSupabaseErrorCode(error);
+  const message = getSupabaseErrorMessage(error);
+
+  return (
+    ["ENOTFOUND", "ECONNREFUSED", "ECONNRESET", "ETIMEDOUT"].includes(code.toUpperCase()) ||
+    /failed to fetch/i.test(message) ||
+    /fetch failed/i.test(message) ||
+    /network(?: request)? failed/i.test(message) ||
+    /getaddrinfo|enotfound|econnrefused|timed?\s*out/i.test(message)
+  );
+}
+
+export function getUserFacingSupabaseError(error: unknown, fallback: string) {
+  if (isSupabaseConnectionError(error)) {
+    return dataServiceUnavailableMessage;
+  }
+
   if (isRecoverableSetupError(error)) {
     return fallback;
   }

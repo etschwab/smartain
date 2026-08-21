@@ -26,7 +26,7 @@ export default async function JoinPage({ params }: JoinPageProps) {
 
   if (!invite || !invite.is_active) {
     return (
-      <main className="content-wrap py-16">
+      <main id="main-content" className="content-wrap py-16">
         <EmptyState
           title="Einladungslink nicht verfügbar"
           description="Dieser Join-Link ist nicht mehr aktiv oder wurde bereits deaktiviert."
@@ -54,7 +54,7 @@ export default async function JoinPage({ params }: JoinPageProps) {
   }
 
   return (
-    <main className="content-wrap py-16">
+    <main id="main-content" className="content-wrap py-16">
       <Card className="mx-auto max-w-3xl overflow-hidden p-8">
         <div className="grid gap-8 lg:grid-cols-[1.1fr,0.9fr]">
           <div>
@@ -88,7 +88,7 @@ export default async function JoinPage({ params }: JoinPageProps) {
             )}
           </div>
 
-          <div className="rounded-[28px] border border-border bg-background/70 p-6">
+          <div className="rounded-none border border-border bg-background/70 p-6">
             <p className="section-kicker">So geht es weiter</p>
             <div className="mt-4 space-y-4 text-sm text-muted-foreground">
               <div className="rounded-3xl border border-border bg-card/70 p-4">
