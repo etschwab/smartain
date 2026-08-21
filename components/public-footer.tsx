@@ -1,9 +1,15 @@
+import Link from "next/link";
+
 export function PublicFooter() {
   return (
-    <footer className="border-t border-border/60 py-10">
-      <div className="content-wrap flex flex-col gap-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-        <p>SmarTrain für Teams, Trainer und Eltern.</p>
-        <p>Planung, Einladungen und Rückmeldungen an einem Ort.</p>
+    <footer className="site-footer">
+      <div className="content-wrap footer-inner">
+        <p className="footer-name"><strong>Smartrain</strong></p>
+        <nav className="footer-links" aria-label="Rechtliche Links">
+          <Link href="/impressum">Impressum</Link>
+          <Link href="/datenschutz">Datenschutz</Link>
+        </nav>
+        <p className="footer-meta">© {new Date().getFullYear()} · Bern, Schweiz</p>
       </div>
     </footer>
   );
