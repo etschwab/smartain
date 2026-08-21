@@ -6,7 +6,7 @@ export default function AppLoading() {
       <Skeleton className="h-12 w-64" />
       <div className="grid gap-4 md:grid-cols-4">
         {Array.from({ length: 4 }).map((_, index) => (
-          <Skeleton key={index} className="h-36 w-full rounded-[28px]" />
+          <Skeleton key={index} className="h-36 w-full rounded-none" />
         ))}
       </div>
       <Skeleton className="h-[360px] w-full rounded-[32px]" />

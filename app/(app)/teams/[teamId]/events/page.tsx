@@ -10,7 +10,7 @@ import { TeamTabs } from "@/components/team/team-tabs";
 import { StatsCard } from "@/components/stats-card";
 import { managerRoles } from "@/lib/constants";
 import { getTeamById, listTeamEvents } from "@/lib/data";
-import { isRecoverableSetupError } from "@/lib/supabase-errors";
+import { getUserFacingSupabaseError, isRecoverableSetupError } from "@/lib/supabase-errors";
 import { requireTeamAccess } from "@/lib/supabase-server";
 import { formatDateTimeLabel, getEventTypeLabel, getResponseStatusLabel } from "@/lib/utils";
 
@@ -43,7 +43,7 @@ export default async function TeamEventsPage({ params, searchParams }: TeamEvent
 
     if (!isRecoverableSetupError(error)) {
       if (error) {
-        throw new Error(error.message);
+        throw new Error(getUserFacingSupabaseError(error, "Die Termine konnten nicht geladen werden."));
       }
 
       myResponses = (data as Array<{ event_id: string; status: "yes" | "no" | "maybe" }>) ?? [];

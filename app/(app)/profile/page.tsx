@@ -22,7 +22,7 @@ export default async function ProfilePage() {
         <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-primary/14 blur-3xl" />
         <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="flex items-start gap-5">
-            <div className="flex h-16 w-16 flex-none items-center justify-center rounded-[24px] bg-primary text-xl font-black text-primary-foreground shadow-[0_18px_42px_-24px_hsl(var(--primary)/0.8)]">
+            <div className="flex h-16 w-16 flex-none items-center justify-center rounded-none bg-primary text-xl font-black text-primary-foreground shadow-[0_18px_42px_-24px_hsl(var(--primary)/0.8)]">
               {getDisplayName(profile.full_name, profile.email).slice(0, 2).toUpperCase()}
             </div>
             <div className="max-w-3xl">
@@ -83,7 +83,7 @@ export default async function ProfilePage() {
             <p className="section-kicker">Account</p>
             <h2 className="mt-2 text-2xl font-semibold">Login und Sicherheit</h2>
             <div className="mt-5 space-y-3">
-              <div className="rounded-[26px] border border-border bg-background/72 p-4">
+              <div className="rounded-none border border-border bg-background/72 p-4">
                 <div className="flex items-center gap-3">
                   <Mail className="h-5 w-5 text-primary" />
                   <div>
@@ -92,7 +92,7 @@ export default async function ProfilePage() {
                   </div>
                 </div>
               </div>
-              <div className="rounded-[26px] border border-border bg-background/72 p-4">
+              <div className="rounded-none border border-border bg-background/72 p-4">
                 <div className="flex items-center gap-3">
                   <ShieldCheck className="h-5 w-5 text-primary" />
                   <div>
@@ -110,7 +110,7 @@ export default async function ProfilePage() {
             {primaryTeam ? (
               <Link
                 href={`/teams/${primaryTeam.id}`}
-                className="mt-5 flex items-center justify-between rounded-[26px] border border-border bg-background/72 p-4 transition-colors hover:border-primary/30"
+                className="mt-5 flex items-center justify-between rounded-none border border-border bg-background/72 p-4 transition-colors hover:border-primary/30"
               >
                 <span className="flex items-center gap-3">
                   <span className="h-3 w-3 rounded-full" style={{ backgroundColor: getTeamAccentColor(primaryTeam.theme_color) }} />
@@ -122,7 +122,7 @@ export default async function ProfilePage() {
                 <Badge variant="outline">{getRoleLabel(primaryTeam.membership.role)}</Badge>
               </Link>
             ) : (
-              <div className="mt-5 rounded-[26px] border border-dashed border-border bg-background/50 p-5 text-sm text-muted-foreground">
+              <div className="mt-5 rounded-none border border-dashed border-border bg-background/50 p-5 text-sm text-muted-foreground">
                 Du bist noch in keinem Team. Erstelle ein Team oder öffne einen Einladungslink.
               </div>
             )}

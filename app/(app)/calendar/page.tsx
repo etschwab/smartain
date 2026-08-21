@@ -102,7 +102,7 @@ export default async function CalendarPage() {
               <Link
                 key={team.id}
                 href={`/teams/${team.id}/events`}
-                className="flex items-center justify-between rounded-[26px] border border-border bg-background/72 p-4 transition-colors hover:border-primary/30"
+                className="flex items-center justify-between rounded-none border border-border bg-background/72 p-4 transition-colors hover:border-primary/30"
               >
                 <span className="flex items-center gap-3">
                   <span className="h-3 w-3 rounded-full" style={{ backgroundColor: getTeamAccentColor(team.theme_color) }} />
@@ -132,7 +132,7 @@ export default async function CalendarPage() {
                   <Link
                     key={event.id}
                     href={`/teams/${event.team?.id ?? event.team_id}/events/${event.id}`}
-                    className="block rounded-[26px] border border-border bg-background/72 p-4 transition-colors hover:border-primary/30"
+                    className="block rounded-none border border-border bg-background/72 p-4 transition-colors hover:border-primary/30"
                   >
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div>

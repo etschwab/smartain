@@ -74,7 +74,7 @@ export default async function TeamsPage() {
                   </div>
                   <Badge variant="outline">{getRoleLabel(team.membership.role)}</Badge>
                 </div>
-                <div className="mt-6 rounded-[24px] border border-border bg-background/70 p-4">
+                <div className="mt-6 rounded-none border border-border bg-background/70 p-4">
                   <div className="flex items-center justify-between gap-3 text-sm">
                     <span className="text-muted-foreground">Team-Akzent</span>
                     <span className="inline-flex items-center gap-2 font-semibold">

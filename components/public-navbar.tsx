@@ -1,91 +1,88 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { Menu, X } from "lucide-react";
+import { ArrowRight, House, ListChecks, LogIn, Sparkles } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { useLayoutEffect } from "react";
 import { Logo } from "@/components/branding/logo";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { Button } from "@/components/ui/button";
 
-const links = [
-  { href: "/#features", label: "Features" },
-  { href: "/#workflow", label: "Workflow" },
-  { href: "/#pricing", label: "Start" }
+const desktopItems = [
+  { href: "/", label: "Home" },
+  { href: "/#features", label: "Funktionen" },
+  { href: "/#workflow", label: "Ablauf" }
+];
+
+const mobileItems = [
+  { href: "/", label: "Home", icon: House },
+  { href: "/#features", label: "Features", icon: Sparkles },
+  { href: "/#workflow", label: "Ablauf", icon: ListChecks },
+  { href: "/login", label: "Login", icon: LogIn }
 ];
 
 export function PublicNavbar() {
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const pathname = usePathname();
+
+  useLayoutEffect(() => {
+    const header = document.querySelector<HTMLElement>(".smart-site-header");
+    if (!header) return;
+
+    let frame = 0;
+    const updateHeader = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => header.classList.toggle("is-compact", window.scrollY > 96));
+    };
+
+    updateHeader();
+    window.addEventListener("scroll", updateHeader, { passive: true });
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", updateHeader);
+    };
+  }, [pathname]);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border/60 bg-background/90 backdrop-blur-xl">
-      <div className="content-wrap py-4">
-        <div className="glass-panel px-4 py-4 sm:px-6">
-          <div className="flex items-center justify-between gap-4">
-            <Logo />
-            <nav className="hidden items-center gap-6 text-sm text-muted-foreground md:flex">
-              {links.map((link) => (
-                <Link key={link.href} href={link.href} className="transition-colors hover:text-foreground">
-                  {link.label}
-                </Link>
-              ))}
-            </nav>
-            <div className="hidden items-center gap-2 md:flex">
-              <Button asChild variant="ghost" size="sm">
-                <Link href="/login">Einloggen</Link>
-              </Button>
-              <Button asChild size="sm">
-                <Link href="/signup">Kostenlos starten</Link>
-              </Button>
-              <ThemeToggle />
-            </div>
-            <div className="flex items-center gap-2 md:hidden">
-              <ThemeToggle />
-              <button
-                type="button"
-                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background/80 text-foreground"
-                aria-label={mobileOpen ? "Menü schließen" : "Menü öffnen"}
-                aria-expanded={mobileOpen}
-                onClick={() => setMobileOpen((current) => !current)}
-              >
-                {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-              </button>
-            </div>
-          </div>
+    <>
+      <a className="skip-link" href="#main-content">Zum Inhalt springen</a>
+      <header className="smart-site-header">
+        <div className="smart-header-inner">
+          <Logo compact className="smart-wordmark" />
 
-          <div
-            className={`overflow-hidden transition-[max-height,opacity,margin] duration-300 md:hidden ${
-              mobileOpen ? "mt-4 max-h-96 opacity-100" : "max-h-0 opacity-0"
-            }`}
-          >
-            <div className="space-y-3 border-t border-border/70 pt-4">
-              <div className="flex flex-col gap-2">
-                {links.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className="rounded-full px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-muted"
-                    onClick={() => setMobileOpen(false)}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-              </div>
-              <div className="flex gap-2">
-                <Button asChild variant="secondary" size="sm" className="flex-1">
-                  <Link href="/login" onClick={() => setMobileOpen(false)}>
-                    Einloggen
-                  </Link>
-                </Button>
-                <Button asChild size="sm" className="flex-1">
-                  <Link href="/signup" onClick={() => setMobileOpen(false)}>
-                    Starten
-                  </Link>
-                </Button>
-              </div>
-            </div>
-          </div>
+          <nav className="smart-main-nav" aria-label="Hauptnavigation">
+            <ul className="smart-nav-list smart-nav-list-desktop">
+              {desktopItems.map((item) => {
+                const isActive = item.href === "/" && pathname === "/";
+                return (
+                  <li key={item.href}>
+                    <Link href={item.href} className={`smart-nav-link${isActive ? " is-active" : ""}`} aria-current={isActive ? "page" : undefined}>
+                      {item.label}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+
+            <Link href="/login" className={`smart-nav-action${pathname === "/login" ? " is-active" : ""}`}>
+              <span>Einloggen</span>
+              <ArrowRight aria-hidden="true" size={17} strokeWidth={2.4} />
+            </Link>
+
+            <ul className="smart-nav-list smart-nav-list-mobile">
+              {mobileItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = pathname === item.href;
+                return (
+                  <li key={item.href}>
+                    <Link href={item.href} className={`smart-nav-link${isActive ? " is-active" : ""}`} aria-current={isActive ? "page" : undefined}>
+                      <Icon aria-hidden="true" size={18} strokeWidth={1.9} />
+                      <span>{item.label}</span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </nav>
         </div>
-      </div>
-    </header>
+      </header>
+    </>
   );
 }

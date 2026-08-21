@@ -144,7 +144,7 @@ export default async function TeamOverviewPage({ params }: TeamPageProps) {
                 <Link
                   key={event.id}
                   href={`/teams/${team.id}/events/${event.id}`}
-                  className="block rounded-[26px] border border-border bg-background/70 p-4"
+                  className="block rounded-none border border-border bg-background/70 p-4"
                 >
                   <div className="flex items-center justify-between gap-3">
                     <p className="font-semibold">{event.title}</p>
@@ -173,7 +173,7 @@ export default async function TeamOverviewPage({ params }: TeamPageProps) {
           </div>
           <div className="mt-5 space-y-3">
             {members.slice(0, 5).map((member) => (
-              <div key={member.id} className="rounded-[26px] border border-border bg-background/70 p-4">
+              <div key={member.id} className="rounded-none border border-border bg-background/70 p-4">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="font-semibold">{member.profile?.full_name ?? member.profile?.email ?? "Unbekannt"}</p>
@@ -199,7 +199,7 @@ export default async function TeamOverviewPage({ params }: TeamPageProps) {
           <div className="mt-5 space-y-3">
             {openTasks.length > 0 ? (
               openTasks.map((task) => (
-                <div key={task.id} className="rounded-[26px] border border-border bg-background/70 p-4">
+                <div key={task.id} className="rounded-none border border-border bg-background/70 p-4">
                   <div className="flex items-center justify-between gap-3">
                     <p className="font-semibold">{task.title}</p>
                     <Badge variant="muted">{getTaskStatusLabel(task.status)}</Badge>

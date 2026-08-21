@@ -25,7 +25,7 @@ export function InviteCard({ invite, absoluteUrl, regenerateAction, toggleAction
           </div>
           <Badge variant={invite.is_active ? "success" : "muted"}>{invite.is_active ? "Aktiv" : "Pausiert"}</Badge>
         </div>
-        <div className="rounded-[28px] border border-border bg-background/70 p-5 text-sm">
+        <div className="rounded-none border border-border bg-background/70 p-5 text-sm">
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="outline">Code {invite.code}</Badge>
             <Badge variant="outline">Rolle {getRoleLabel(invite.role)}</Badge>

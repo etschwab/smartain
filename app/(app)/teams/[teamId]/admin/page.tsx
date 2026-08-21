@@ -75,7 +75,7 @@ export default async function TeamAdminPage({ params }: TeamAdminPageProps) {
                 <label className="text-sm font-semibold">Teamfarbe</label>
                 <Input name="theme_color" type="color" defaultValue={teamAccent} className="h-14 w-20 p-2" />
               </div>
-              <div className="rounded-[24px] border border-border bg-background/70 p-4 text-sm text-muted-foreground">
+              <div className="rounded-none border border-border bg-background/70 p-4 text-sm text-muted-foreground">
                 Owner-Rechte gelten für Farben, Namen, Mitgliederrollen und Invite-Verwaltung.
               </div>
             </div>
@@ -139,10 +139,10 @@ export default async function TeamAdminPage({ params }: TeamAdminPageProps) {
                 </div>
 
                 <div className="grid gap-3 text-sm text-muted-foreground sm:grid-cols-2">
-                  <div className="rounded-[22px] border border-border bg-background/70 p-3">E-Mail: {member.profile?.email ?? "keine Angabe"}</div>
-                  <div className="rounded-[22px] border border-border bg-background/70 p-3">Telefon: {member.profile?.phone ?? "keine Angabe"}</div>
-                  <div className="rounded-[22px] border border-border bg-background/70 p-3">Rückennummer: {member.profile?.jersey_number ?? "keine Angabe"}</div>
-                  <div className="rounded-[22px] border border-border bg-background/70 p-3">Position: {member.profile?.position ?? "keine Angabe"}</div>
+                  <div className="rounded-none border border-border bg-background/70 p-3">E-Mail: {member.profile?.email ?? "keine Angabe"}</div>
+                  <div className="rounded-none border border-border bg-background/70 p-3">Telefon: {member.profile?.phone ?? "keine Angabe"}</div>
+                  <div className="rounded-none border border-border bg-background/70 p-3">Rückennummer: {member.profile?.jersey_number ?? "keine Angabe"}</div>
+                  <div className="rounded-none border border-border bg-background/70 p-3">Position: {member.profile?.position ?? "keine Angabe"}</div>
                 </div>
 
                 <div className="flex flex-col gap-3 border-t border-border/70 pt-5 sm:flex-row sm:items-end sm:justify-between">

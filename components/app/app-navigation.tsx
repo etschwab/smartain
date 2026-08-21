@@ -24,9 +24,10 @@ export function AppNavigation({ direction = "row", compact = false, onNavigate }
 
   return (
     <nav
+      aria-label="App-Navigation"
       className={cn(
-        "flex gap-2",
-        direction === "row" ? "flex-wrap items-center" : "flex-col items-stretch"
+        compact ? "grid h-full grid-cols-5 gap-0" : "flex gap-1",
+        !compact && (direction === "row" ? "flex-wrap items-center" : "flex-col items-stretch")
       )}
     >
       {items.map((item) => {
@@ -39,12 +40,12 @@ export function AppNavigation({ direction = "row", compact = false, onNavigate }
             href={item.href}
             onClick={onNavigate}
             className={cn(
-              "inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all",
+              "inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors",
               direction === "column" && "justify-between px-5 py-3",
-              compact && "flex-1 flex-col justify-center gap-1 rounded-2xl px-2 py-2 text-[11px] leading-none",
-              isActive
-                ? "bg-primary text-primary-foreground shadow-[0_12px_28px_-18px_hsl(var(--primary)/0.85)]"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              compact && "h-full min-w-0 flex-col justify-center gap-0.5 rounded-full px-1 py-1 text-[clamp(0.5rem,2.1vw,0.62rem)] leading-none",
+              isActive && !compact && "border-white/15 text-foreground",
+              isActive && compact && "border-transparent bg-primary/10 text-primary",
+              !isActive && "border-transparent text-muted-foreground hover:bg-white/[0.06] hover:text-foreground"
             )}
           >
             <Icon className={cn("h-4 w-4", compact && "h-5 w-5")} />

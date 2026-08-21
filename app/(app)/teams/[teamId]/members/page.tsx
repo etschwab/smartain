@@ -61,12 +61,12 @@ export default async function TeamMembersPage({ params }: TeamMembersPageProps) 
               </div>
 
               <div className="grid gap-3 text-sm text-muted-foreground sm:grid-cols-2">
-                <div className="rounded-[22px] border border-border bg-background/70 p-3">E-Mail: {member.profile?.email ?? "keine Angabe"}</div>
-                <div className="rounded-[22px] border border-border bg-background/70 p-3">Telefon: {member.profile?.phone ?? "keine Angabe"}</div>
-                <div className="rounded-[22px] border border-border bg-background/70 p-3">Rückennummer: {member.profile?.jersey_number ?? "keine Angabe"}</div>
-                <div className="rounded-[22px] border border-border bg-background/70 p-3">Position: {member.profile?.position ?? "keine Angabe"}</div>
-                <div className="rounded-[22px] border border-border bg-background/70 p-3">Geburtstag: {member.profile?.birthday ?? "keine Angabe"}</div>
-                <div className="rounded-[22px] border border-border bg-background/70 p-3">Notfallkontakt: {member.profile?.emergency_contact_name ?? "keine Angabe"}</div>
+                <div className="rounded-none border border-border bg-background/70 p-3">E-Mail: {member.profile?.email ?? "keine Angabe"}</div>
+                <div className="rounded-none border border-border bg-background/70 p-3">Telefon: {member.profile?.phone ?? "keine Angabe"}</div>
+                <div className="rounded-none border border-border bg-background/70 p-3">Rückennummer: {member.profile?.jersey_number ?? "keine Angabe"}</div>
+                <div className="rounded-none border border-border bg-background/70 p-3">Position: {member.profile?.position ?? "keine Angabe"}</div>
+                <div className="rounded-none border border-border bg-background/70 p-3">Geburtstag: {member.profile?.birthday ?? "keine Angabe"}</div>
+                <div className="rounded-none border border-border bg-background/70 p-3">Notfallkontakt: {member.profile?.emergency_contact_name ?? "keine Angabe"}</div>
               </div>
 
               {canManage ? (

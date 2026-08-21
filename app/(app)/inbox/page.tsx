@@ -73,7 +73,7 @@ export default async function InboxPage() {
                 <Link
                   key={notification.id}
                   href={notification.action_path ?? "/dashboard"}
-                  className="group block rounded-[26px] border border-border bg-background/72 p-4 transition-colors hover:border-primary/30"
+                  className="group block rounded-none border border-border bg-background/72 p-4 transition-colors hover:border-primary/30"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
@@ -92,7 +92,7 @@ export default async function InboxPage() {
                 </Link>
               ))
             ) : (
-              <div className="rounded-[26px] border border-dashed border-border bg-background/50 p-5 text-sm text-muted-foreground">
+              <div className="rounded-none border border-dashed border-border bg-background/50 p-5 text-sm text-muted-foreground">
                 Noch keine Team-Updates vorhanden.
               </div>
             )}
@@ -111,7 +111,7 @@ export default async function InboxPage() {
                   <Link
                     key={event.id}
                     href={`/teams/${event.team?.id ?? event.team_id}/events/${event.id}`}
-                    className="block rounded-[26px] border border-border bg-background/72 p-4 transition-colors hover:border-primary/30"
+                    className="block rounded-none border border-border bg-background/72 p-4 transition-colors hover:border-primary/30"
                   >
                     <div className="flex items-center justify-between gap-3">
                       <p className="font-semibold">{event.title}</p>
@@ -122,7 +122,7 @@ export default async function InboxPage() {
                   </Link>
                 ))
               ) : (
-                <p className="rounded-[26px] border border-dashed border-border bg-background/50 p-5 text-sm text-muted-foreground">
+                <p className="rounded-none border border-dashed border-border bg-background/50 p-5 text-sm text-muted-foreground">
                   Keine offenen Rückmeldungen.
                 </p>
               )}
@@ -140,7 +140,7 @@ export default async function InboxPage() {
                   <Link
                     key={task.id}
                     href={`/teams/${task.team_id}/tasks`}
-                    className="block rounded-[26px] border border-border bg-background/72 p-4 transition-colors hover:border-primary/30"
+                    className="block rounded-none border border-border bg-background/72 p-4 transition-colors hover:border-primary/30"
                   >
                     <div className="flex items-center justify-between gap-3">
                       <p className="font-semibold">{task.title}</p>
@@ -153,7 +153,7 @@ export default async function InboxPage() {
                   </Link>
                 ))
               ) : (
-                <p className="rounded-[26px] border border-dashed border-border bg-background/50 p-5 text-sm text-muted-foreground">
+                <p className="rounded-none border border-dashed border-border bg-background/50 p-5 text-sm text-muted-foreground">
                   Keine offenen Aufgaben für dich.
                 </p>
               )}

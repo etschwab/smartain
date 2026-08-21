@@ -78,17 +78,17 @@ export default async function DashboardPage() {
             </div>
 
             <div className="grid gap-4 md:grid-cols-3">
-              <div className="rounded-[28px] border border-border bg-card/72 p-5">
+              <div className="rounded-none border border-border bg-card/72 p-5">
                 <p className="text-sm font-medium text-muted-foreground">Heute</p>
                 <p className="mt-3 text-3xl font-semibold">{dashboard.todayEvents.length}</p>
                 <p className="mt-2 text-sm text-muted-foreground">Termine, die heute wirklich zählen.</p>
               </div>
-              <div className="rounded-[28px] border border-border bg-card/72 p-5">
+              <div className="rounded-none border border-border bg-card/72 p-5">
                 <p className="text-sm font-medium text-muted-foreground">Offene Zusagen</p>
                 <p className="mt-3 text-3xl font-semibold">{dashboard.pendingResponses.length}</p>
                 <p className="mt-2 text-sm text-muted-foreground">Antworten, die noch von dir gebraucht werden.</p>
               </div>
-              <div className="rounded-[28px] border border-border bg-card/72 p-5">
+              <div className="rounded-none border border-border bg-card/72 p-5">
                 <p className="text-sm font-medium text-muted-foreground">Aufgaben</p>
                 <p className="mt-3 text-3xl font-semibold">{dashboard.assignedTasks.length}</p>
                 <p className="mt-2 text-sm text-muted-foreground">Offene persönliche To-dos im Teamkontext.</p>
@@ -112,7 +112,7 @@ export default async function DashboardPage() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="group flex items-center justify-between gap-4 rounded-[26px] border border-border bg-background/70 p-4 transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:bg-accent/65"
+                  className="group flex items-center justify-between gap-4 rounded-none border border-border bg-background/70 p-4 transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:bg-accent/65"
                 >
                   <span className="flex items-center gap-3">
                     <span className="rounded-2xl bg-primary/10 p-3 text-primary">
@@ -172,7 +172,7 @@ export default async function DashboardPage() {
                 <Link
                   key={team.id}
                   href={`/teams/${team.id}`}
-                  className="rounded-[28px] border border-border bg-background/72 p-5 transition-all hover:-translate-y-1 hover:border-primary/30"
+                  className="rounded-none border border-border bg-background/72 p-5 transition-all hover:-translate-y-1 hover:border-primary/30"
                   style={{ boxShadow: `inset 0 0 0 1px ${teamAccent}22` }}
                 >
                   <div className="flex items-start justify-between gap-4">
@@ -210,7 +210,7 @@ export default async function DashboardPage() {
                 <Link
                   key={event.id}
                   href={`/teams/${event.team_id}/events/${event.id}`}
-                  className="block rounded-[26px] border border-border bg-background/72 p-4 transition-colors hover:border-primary/30"
+                  className="block rounded-none border border-border bg-background/72 p-4 transition-colors hover:border-primary/30"
                 >
                   <div className="flex items-center justify-between gap-3">
                     <div>
@@ -222,7 +222,7 @@ export default async function DashboardPage() {
                 </Link>
               ))
             ) : (
-              <div className="rounded-[26px] border border-dashed border-border bg-background/50 p-5 text-sm text-muted-foreground">
+              <div className="rounded-none border border-dashed border-border bg-background/50 p-5 text-sm text-muted-foreground">
                 Heute ist kein Termin geplant. Perfekt, um den nächsten Trainingsblock vorzubereiten.
               </div>
             )}
@@ -247,7 +247,7 @@ export default async function DashboardPage() {
                 <Link
                   key={event.id}
                   href={`/teams/${event.team?.id ?? event.team_id}/events/${event.id}`}
-                  className="block rounded-[26px] border border-border bg-background/72 p-4 transition-colors hover:border-primary/30"
+                  className="block rounded-none border border-border bg-background/72 p-4 transition-colors hover:border-primary/30"
                 >
                   <div className="flex items-center justify-between gap-3">
                     <p className="font-semibold">{event.title}</p>
@@ -258,7 +258,7 @@ export default async function DashboardPage() {
                 </Link>
               ))
             ) : (
-              <div className="rounded-[26px] border border-dashed border-border bg-background/50 p-5 text-sm text-muted-foreground">
+              <div className="rounded-none border border-dashed border-border bg-background/50 p-5 text-sm text-muted-foreground">
                 Stark: aktuell wartet keine offene Zusage auf dich.
               </div>
             )}
@@ -279,7 +279,7 @@ export default async function DashboardPage() {
                 <Link
                   key={task.id}
                   href={`/teams/${task.team_id}/tasks`}
-                  className="block rounded-[26px] border border-border bg-background/72 p-4 transition-colors hover:border-primary/30"
+                  className="block rounded-none border border-border bg-background/72 p-4 transition-colors hover:border-primary/30"
                 >
                   <div className="flex items-center justify-between gap-3">
                     <p className="font-semibold">{task.title}</p>
@@ -294,7 +294,7 @@ export default async function DashboardPage() {
                 </Link>
               ))
             ) : (
-              <div className="rounded-[26px] border border-dashed border-border bg-background/50 p-5 text-sm text-muted-foreground">
+              <div className="rounded-none border border-dashed border-border bg-background/50 p-5 text-sm text-muted-foreground">
                 Du hast aktuell keine offenen Aufgaben.
               </div>
             )}

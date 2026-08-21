@@ -89,19 +89,19 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
           <p className="section-kicker">Antwortstatus</p>
           <h2 className="mt-2 text-2xl font-semibold">Teamüberblick</h2>
           <div className="mt-5 grid gap-4 sm:grid-cols-4">
-            <div className="rounded-[24px] border border-border bg-background/70 p-4">
+            <div className="rounded-none border border-border bg-background/70 p-4">
               <p className="text-sm text-muted-foreground">Zugesagt</p>
               <p className="mt-2 text-3xl font-semibold">{counts.yes}</p>
             </div>
-            <div className="rounded-[24px] border border-border bg-background/70 p-4">
+            <div className="rounded-none border border-border bg-background/70 p-4">
               <p className="text-sm text-muted-foreground">Absagen</p>
               <p className="mt-2 text-3xl font-semibold">{counts.no}</p>
             </div>
-            <div className="rounded-[24px] border border-border bg-background/70 p-4">
+            <div className="rounded-none border border-border bg-background/70 p-4">
               <p className="text-sm text-muted-foreground">Vielleicht</p>
               <p className="mt-2 text-3xl font-semibold">{counts.maybe}</p>
             </div>
-            <div className="rounded-[24px] border border-border bg-background/70 p-4">
+            <div className="rounded-none border border-border bg-background/70 p-4">
               <p className="text-sm text-muted-foreground">Offen</p>
               <p className="mt-2 text-3xl font-semibold">{counts.pending}</p>
             </div>
@@ -161,7 +161,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
           <div className="mt-5 space-y-3">
             {missingMembers.length > 0 ? (
               missingMembers.map((member) => (
-                <div key={member.id} className="rounded-[26px] border border-border bg-background/70 p-4">
+                <div key={member.id} className="rounded-none border border-border bg-background/70 p-4">
                   <p className="font-semibold">{member.profile?.full_name ?? member.profile?.email ?? "Unbekannt"}</p>
                   <p className="text-sm text-muted-foreground">{member.profile?.email ?? "Keine E-Mail"}</p>
                 </div>
@@ -190,7 +190,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
                 const member = members.find((entry) => entry.user_id === response.user_id);
 
                 return (
-                  <div key={response.id} className="rounded-[26px] border border-border bg-background/70 p-4">
+                  <div key={response.id} className="rounded-none border border-border bg-background/70 p-4">
                     <div className="flex items-center justify-between gap-3">
                       <p className="font-semibold">{member?.profile?.full_name ?? member?.profile?.email ?? "Unbekannt"}</p>
                       <Badge variant={response.status === "yes" ? "success" : response.status === "no" ? "danger" : "muted"}>

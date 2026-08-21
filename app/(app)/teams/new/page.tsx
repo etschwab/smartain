@@ -30,14 +30,14 @@ export default async function NewTeamPage() {
               Name, Sportart, Saison und Grundfarbe bilden die Basis für euren gemeinsamen Teambereich mit Einladungen,
               Trainings und Rückmeldungen.
             </p>
-            <div className="rounded-[28px] border border-border bg-background/70 p-5 text-sm text-muted-foreground">
+            <div className="rounded-none border border-border bg-background/70 p-5 text-sm text-muted-foreground">
               <div className="mb-3 flex items-center gap-2 text-foreground">
                 <Sparkles className="h-4 w-4 text-primary" />
                 <span className="font-semibold">Was direkt danach möglich ist</span>
               </div>
               <p>Mitglieder einladen, Termine planen, Aufgaben verteilen und auf Trainings Zu- oder Absagen sammeln.</p>
             </div>
-            <div className="rounded-[28px] border border-border bg-background/70 p-5 text-sm text-muted-foreground">
+            <div className="rounded-none border border-border bg-background/70 p-5 text-sm text-muted-foreground">
               Eigene Teams: {ownedTeams.length}/{MAX_OWNED_TEAMS}
             </div>
           </div>
@@ -53,7 +53,7 @@ export default async function NewTeamPage() {
               <label className="text-sm font-semibold">Teamfarbe</label>
               <div className="grid gap-3 sm:grid-cols-2">
                 {teamColorOptions.map((color, index) => (
-                  <label key={`${color}-${index}`} className="flex cursor-pointer items-center gap-3 rounded-[22px] border border-border bg-background/75 px-4 py-3 text-sm">
+                  <label key={`${color}-${index}`} className="flex cursor-pointer items-center gap-3 rounded-none border border-border bg-background/75 px-4 py-3 text-sm">
                     <input type="radio" name="theme_color" value={color} defaultChecked={index === 0} />
                     <span className="h-5 w-5 rounded-full" style={{ backgroundColor: color }} />
                     <span className="font-medium">{color}</span>
