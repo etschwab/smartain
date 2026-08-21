@@ -1,10 +1,10 @@
 {
-  "name": "SmarTrain",
-  "short_name": "SmarTrain",
+  "name": "Smartrain",
+  "short_name": "Smartrain",
   "description": "Moderne Team-Management- und Trainings-App für Sportteams.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#fbf6f3",
-  "theme_color": "#e11d48",
+  "background_color": "#090d0f",
+  "theme_color": "#f33f55",
   "icons": []
 }

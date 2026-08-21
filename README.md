@@ -1,6 +1,8 @@
-# SmarTrain Starter
+# Smartrain
 
 Lauffaehige MVP-App fuer Teamverwaltung, Spieler, Trainings und Spiele mit Next.js, Supabase und Vercel.
+
+Produktiv: https://smartrain.etienneschwab.ch
 
 ## Tech Stack
 
@@ -50,6 +52,8 @@ Dann oeffne `http://localhost:3000`.
 3. Diese Environment Variables in Vercel setzen:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `NEXT_PUBLIC_SITE_URL` (empfohlen)
+   - `SUPABASE_SERVICE_ROLE_KEY` (optional; nur für privilegierte Invite-Lookups)
 4. Nach dem ersten Deploy die Vercel-URL in Supabase ergaenzen:
    - Site URL: deine Produktions-URL
    - Additional Redirect URLs: `https://deine-domain.tld/auth/callback`
@@ -59,4 +63,6 @@ Dann oeffne `http://localhost:3000`.
 
 - Die Policies in `supabase/schema.sql` sind bewusst einfach fuer ein MVP.
 - Fuer echte Vereine solltest du die RLS-Regeln spaeter pro Club und Team einschraenken.
-"# smartain" 
+- Production-Werte für `NEXT_PUBLIC_SUPABASE_URL` dürfen nicht auf `localhost` zeigen.
+- Magic Links verwenden die aktuelle Browser-Origin, wenn `NEXT_PUBLIC_SITE_URL` nicht gesetzt ist.
+- Änderungen an `NEXT_PUBLIC_*`-Variablen werden beim Build in den Browser-Code eingebettet und benötigen einen neuen Deploy.
