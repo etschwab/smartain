@@ -109,5 +109,6 @@ export const toastMessages: Record<string, string> = {
   "events-created": "Terminserie erstellt",
   "events-imported": "Termine importiert",
   "event-cancelled": "Termin abgesagt und Team informiert",
-  "event-reactivated": "Termin reaktiviert"
+  "event-reactivated": "Termin reaktiviert",
+  "game-report-saved": "Spielbericht gespeichert"
 };

@@ -78,6 +78,10 @@ export type EventRecord = {
   response_deadline?: string | null;
   max_participants?: number | null;
   is_cancelled?: boolean;
+  opponent?: string | null;
+  score_for?: number | null;
+  score_against?: number | null;
+  report_summary?: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;

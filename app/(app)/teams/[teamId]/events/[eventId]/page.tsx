@@ -11,7 +11,7 @@ import { SubmitButton } from "@/components/forms/submit-button";
 import { TeamTabs } from "@/components/team/team-tabs";
 import { eventTypeOptions, responseStatusOptions, managerRoles } from "@/lib/constants";
 import { getEventById, getEventResponseCounts, getTeamById, listEventResponses, listTeamMembersDetailed } from "@/lib/data";
-import { deleteEventAction, removeLineupEntryAction, respondToEventAction, setLineupEntryAction, toggleEventCancellationAction, updateEventAction } from "@/lib/actions";
+import { deleteEventAction, removeLineupEntryAction, respondToEventAction, setLineupEntryAction, toggleEventCancellationAction, updateEventAction, updateGameReportAction } from "@/lib/actions";
 import { listEventLineup, profileName } from "@/lib/organization-data";
 import { requireTeamAccess } from "@/lib/supabase-server";
 import { formatDateTimeLabel, getEventTypeLabel, getResponseStatusLabel, toDateTimeLocalValue } from "@/lib/utils";
@@ -164,6 +164,34 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
             </div>
           </form>
         </Card>
+      ) : null}
+
+      {event.type === "game" ? (
+        <section id="game-report" className="scroll-mt-28 grid gap-6 xl:grid-cols-[0.8fr,1.2fr]">
+          {canManage ? (
+            <Card className="p-6">
+              <p className="section-kicker">Spielbericht</p>
+              <h2 className="mt-2 text-2xl font-semibold">Ergebnis erfassen</h2>
+              <form action={updateGameReportAction.bind(null, team.id, event.id)} className="mt-5 grid gap-4">
+                <Input name="opponent" defaultValue={event.opponent ?? ""} placeholder="Gegner" />
+                <div className="grid grid-cols-2 gap-4">
+                  <Input name="score_for" type="number" min="0" defaultValue={event.score_for ?? ""} placeholder="Eigene Punkte" aria-label="Eigene Punkte" />
+                  <Input name="score_against" type="number" min="0" defaultValue={event.score_against ?? ""} placeholder="Gegnerische Punkte" aria-label="Gegnerische Punkte" />
+                </div>
+                <Textarea name="report_summary" defaultValue={event.report_summary ?? ""} placeholder="Spielverlauf, Highlights und Learnings" />
+                <SubmitButton pendingLabel="Wird gespeichert...">Spielbericht speichern</SubmitButton>
+              </form>
+            </Card>
+          ) : null}
+          <Card className="p-6">
+            <p className="section-kicker">Resultat</p>
+            <h2 className="mt-2 text-2xl font-semibold">{event.opponent ? `${team.name} vs. ${event.opponent}` : "Spielauswertung"}</h2>
+            {event.score_for !== null && event.score_for !== undefined && event.score_against !== null && event.score_against !== undefined ? (
+              <p className="mt-6 font-display text-7xl leading-none text-primary">{event.score_for}:{event.score_against}</p>
+            ) : <p className="mt-5 text-sm text-muted-foreground">Noch kein Ergebnis eingetragen.</p>}
+            <p className="mt-6 whitespace-pre-wrap leading-7 text-muted-foreground">{event.report_summary ?? "Der Spielbericht folgt nach dem Spiel."}</p>
+          </Card>
+        </section>
       ) : null}
 
       <section id="lineup" className="scroll-mt-28 grid gap-6 xl:grid-cols-[0.8fr,1.2fr]">

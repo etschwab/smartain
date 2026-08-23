@@ -140,6 +140,10 @@ create table if not exists public.events (
   response_deadline timestamptz,
   max_participants integer check (max_participants is null or max_participants between 1 and 500),
   is_cancelled boolean not null default false,
+  opponent text,
+  score_for integer,
+  score_against integer,
+  report_summary text,
   created_by uuid references auth.users(id) on delete set null,
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now())
@@ -148,6 +152,10 @@ create table if not exists public.events (
 alter table public.events add column if not exists response_deadline timestamptz;
 alter table public.events add column if not exists max_participants integer;
 alter table public.events add column if not exists is_cancelled boolean not null default false;
+alter table public.events add column if not exists opponent text;
+alter table public.events add column if not exists score_for integer;
+alter table public.events add column if not exists score_against integer;
+alter table public.events add column if not exists report_summary text;
 
 create table if not exists public.event_responses (
   id uuid primary key default gen_random_uuid(),

@@ -268,6 +268,27 @@ export async function toggleEventCancellationAction(teamId: string, eventId: str
   redirect(`/teams/${teamId}/events/${eventId}?toast=${cancel ? "event-cancelled" : "event-reactivated"}`);
 }
 
+export async function updateGameReportAction(teamId: string, eventId: string, formData: FormData) {
+  const { supabase } = await requireTeamManager(teamId, `/teams/${teamId}/events/${eventId}`);
+  const opponent = getNullableString(formData, "opponent");
+  const scoreForValue = getNullableString(formData, "score_for");
+  const scoreAgainstValue = getNullableString(formData, "score_against");
+  const scoreFor = scoreForValue === null ? null : Number.parseInt(scoreForValue, 10);
+  const scoreAgainst = scoreAgainstValue === null ? null : Number.parseInt(scoreAgainstValue, 10);
+  if ((scoreFor === null) !== (scoreAgainst === null)) throw new Error("Bitte trage beide Ergebniswerte ein oder lasse beide leer.");
+  if ((scoreFor !== null && (!Number.isInteger(scoreFor) || scoreFor < 0)) || (scoreAgainst !== null && (!Number.isInteger(scoreAgainst) || scoreAgainst < 0))) {
+    throw new Error("Ergebnisse müssen positive ganze Zahlen sein.");
+  }
+  const { error } = await supabase.from("events").update({
+    opponent,
+    score_for: scoreFor,
+    score_against: scoreAgainst,
+    report_summary: getNullableString(formData, "report_summary")
+  }).eq("id", eventId).eq("team_id", teamId).eq("type", "game");
+  if (error) throw new Error(getUserFacingSupabaseError(error, "Der Spielbericht konnte nicht gespeichert werden."));
+  redirect(`/teams/${teamId}/events/${eventId}?toast=game-report-saved#game-report`);
+}
+
 export async function respondToEventAction(teamId: string, eventId: string, formData: FormData) {
   const { supabase, profile, user } = await requireTeamAccess(teamId, `/teams/${teamId}/events/${eventId}`);
   const status = getString(formData, "status");
