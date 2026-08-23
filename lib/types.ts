@@ -75,6 +75,9 @@ export type EventRecord = {
   ends_at: string;
   location: string | null;
   description: string | null;
+  response_deadline?: string | null;
+  max_participants?: number | null;
+  is_cancelled?: boolean;
   created_by: string | null;
   created_at: string;
   updated_at: string;

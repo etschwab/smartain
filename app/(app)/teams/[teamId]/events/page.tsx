@@ -138,6 +138,7 @@ export default async function TeamEventsPage({ params, searchParams }: TeamEvent
                       <div className="flex flex-wrap items-center gap-3">
                         <h2 className="text-2xl font-semibold">{event.title}</h2>
                         <Badge>{getEventTypeLabel(event.type)}</Badge>
+                        {event.is_cancelled ? <Badge variant="danger">Abgesagt</Badge> : null}
                         {response ? (
                           <Badge variant={response === "yes" ? "success" : response === "no" ? "danger" : "muted"}>
                             {getResponseStatusLabel(response)}

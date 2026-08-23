@@ -11,7 +11,7 @@ import { SubmitButton } from "@/components/forms/submit-button";
 import { TeamTabs } from "@/components/team/team-tabs";
 import { eventTypeOptions, responseStatusOptions, managerRoles } from "@/lib/constants";
 import { getEventById, getEventResponseCounts, getTeamById, listEventResponses, listTeamMembersDetailed } from "@/lib/data";
-import { deleteEventAction, removeLineupEntryAction, respondToEventAction, setLineupEntryAction, updateEventAction } from "@/lib/actions";
+import { deleteEventAction, removeLineupEntryAction, respondToEventAction, setLineupEntryAction, toggleEventCancellationAction, updateEventAction } from "@/lib/actions";
 import { listEventLineup, profileName } from "@/lib/organization-data";
 import { requireTeamAccess } from "@/lib/supabase-server";
 import { formatDateTimeLabel, getEventTypeLabel, getResponseStatusLabel, toDateTimeLocalValue } from "@/lib/utils";
@@ -56,6 +56,8 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
             <p className="mt-3 text-muted-foreground">{formatDateTimeLabel(event.starts_at)} · {event.location ?? "Ort folgt"}</p>
             <div className="mt-4 flex flex-wrap gap-2">
               <Badge>{getEventTypeLabel(event.type)}</Badge>
+              {event.is_cancelled ? <Badge variant="danger">Abgesagt</Badge> : null}
+              {event.max_participants ? <Badge variant="outline">Max. {event.max_participants} Teilnehmende</Badge> : null}
               {currentResponse ? (
                 <Badge variant="success">Deine Antwort: {getResponseStatusLabel(currentResponse.status)}</Badge>
               ) : (
@@ -74,6 +76,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
         <Card className="p-6">
           <p className="section-kicker">Deine Rückmeldung</p>
           <h2 className="mt-2 text-2xl font-semibold">Antwort absenden</h2>
+          {event.response_deadline ? <p className="mt-2 text-sm text-muted-foreground">Antwortfrist: {formatDateTimeLabel(event.response_deadline)}</p> : null}
           <form action={respondToEventAction.bind(null, team.id, event.id)} className="mt-5 space-y-4">
             <Select name="status" defaultValue={currentResponse?.status ?? "yes"}>
               {responseStatusOptions.map((option) => (
@@ -83,7 +86,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
               ))}
             </Select>
             <Textarea name="comment" placeholder="Optionaler Kommentar" defaultValue={currentResponse?.comment ?? ""} />
-            <SubmitButton pendingLabel="Antwort wird gespeichert...">Antwort speichern</SubmitButton>
+            <SubmitButton pendingLabel="Antwort wird gespeichert..." disabled={event.is_cancelled}>Antwort speichern</SubmitButton>
           </form>
         </Card>
 
@@ -130,6 +133,11 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
                 Termin löschen
               </ConfirmSubmit>
             </form>
+            <form action={toggleEventCancellationAction.bind(null, team.id, event.id, !event.is_cancelled)}>
+              <SubmitButton variant="secondary" pendingLabel="Wird aktualisiert...">
+                {event.is_cancelled ? "Termin reaktivieren" : "Termin absagen"}
+              </SubmitButton>
+            </form>
           </div>
           <form action={updateEventAction.bind(null, team.id, event.id)} className="mt-6 grid gap-5">
             <div className="grid gap-5 sm:grid-cols-2">
@@ -143,6 +151,8 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
               </Select>
               <Input name="starts_at" type="datetime-local" defaultValue={toDateTimeLocalValue(event.starts_at)} required />
               <Input name="ends_at" type="datetime-local" defaultValue={toDateTimeLocalValue(event.ends_at)} required />
+              <Input name="response_deadline" type="datetime-local" defaultValue={toDateTimeLocalValue(event.response_deadline)} aria-label="Antwortfrist" />
+              <Input name="max_participants" type="number" min="1" max="500" defaultValue={event.max_participants ?? ""} placeholder="Maximale Teilnehmende" />
               <Input name="location" defaultValue={event.location ?? ""} placeholder="Ort" />
             </div>
             <Textarea name="description" defaultValue={event.description ?? ""} placeholder="Beschreibung, Treffpunkt oder Zusatzinfos" />

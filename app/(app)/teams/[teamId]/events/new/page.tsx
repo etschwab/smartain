@@ -50,6 +50,8 @@ export default async function NewEventPage({ params }: NewEventPageProps) {
             <Input name="starts_at" type="datetime-local" required />
             <Input name="ends_at" type="datetime-local" required />
             <Input name="location" placeholder="Ort" />
+            <Input name="response_deadline" type="datetime-local" aria-label="Antwortfrist" />
+            <Input name="max_participants" type="number" min="1" max="500" placeholder="Maximale Teilnehmende" />
             <label className="grid gap-2 text-sm font-semibold">
               Wöchentliche Wiederholungen
               <Input name="recurrence_count" type="number" min="1" max="52" defaultValue="1" />

@@ -79,6 +79,12 @@ export async function createEventAction(teamId: string, formData: FormData) {
     ends_at: addWeeks(endDate, index).toISOString(),
     location: getNullableString(formData, "location"),
     description: getNullableString(formData, "description"),
+    response_deadline: getNullableString(formData, "response_deadline")
+      ? new Date(getString(formData, "response_deadline")).toISOString()
+      : null,
+    max_participants: getNullableString(formData, "max_participants")
+      ? Number.parseInt(getString(formData, "max_participants"), 10)
+      : null,
     created_by: user.id
   }));
 
@@ -206,6 +212,12 @@ export async function updateEventAction(teamId: string, eventId: string, formDat
       ends_at: new Date(endsAt).toISOString(),
       location: getNullableString(formData, "location"),
       description: getNullableString(formData, "description"),
+      response_deadline: getNullableString(formData, "response_deadline")
+        ? new Date(getString(formData, "response_deadline")).toISOString()
+        : null,
+      max_participants: getNullableString(formData, "max_participants")
+        ? Number.parseInt(getString(formData, "max_participants"), 10)
+        : null,
       created_by: user.id
     })
     .eq("id", eventId)
@@ -229,12 +241,61 @@ export async function deleteEventAction(teamId: string, eventId: string) {
   redirect(`/teams/${teamId}/events?toast=event-removed`);
 }
 
+export async function toggleEventCancellationAction(teamId: string, eventId: string, cancel: boolean) {
+  const { supabase, user } = await requireTeamManager(teamId, `/teams/${teamId}/events/${eventId}`);
+  const { data: event, error } = await supabase
+    .from("events")
+    .update({ is_cancelled: cancel })
+    .eq("id", eventId)
+    .eq("team_id", teamId)
+    .select("title")
+    .single();
+  if (error) throw new Error(getUserFacingSupabaseError(error, "Der Terminstatus konnte nicht geändert werden."));
+
+  const { data: members } = await supabase.from("team_members").select("user_id").eq("team_id", teamId).eq("status", "active");
+  await createNotificationsForUsers(
+    supabase,
+    ((members as Array<{ user_id: string }> | null) ?? []).map((member) => member.user_id).filter((id) => id !== user.id),
+    {
+      team_id: teamId,
+      event_id: eventId,
+      type: cancel ? "event_cancelled" : "event_reactivated",
+      title: cancel ? "Termin abgesagt" : "Termin findet wieder statt",
+      body: `„${event.title}“ wurde ${cancel ? "abgesagt" : "reaktiviert"}.`,
+      action_path: `/teams/${teamId}/events/${eventId}`
+    }
+  );
+  redirect(`/teams/${teamId}/events/${eventId}?toast=${cancel ? "event-cancelled" : "event-reactivated"}`);
+}
+
 export async function respondToEventAction(teamId: string, eventId: string, formData: FormData) {
   const { supabase, profile, user } = await requireTeamAccess(teamId, `/teams/${teamId}/events/${eventId}`);
   const status = getString(formData, "status");
 
   if (!status) {
     throw new Error("Bitte wähle eine Antwort aus.");
+  }
+
+  const { data: event, error: eventError } = await supabase
+    .from("events")
+    .select("response_deadline, max_participants, is_cancelled")
+    .eq("id", eventId)
+    .eq("team_id", teamId)
+    .single();
+  if (eventError) throw new Error(getUserFacingSupabaseError(eventError, "Der Termin konnte nicht geprüft werden."));
+  if (event.is_cancelled) throw new Error("Dieser Termin wurde abgesagt.");
+  if (event.response_deadline && new Date(event.response_deadline).getTime() < Date.now()) {
+    throw new Error("Die Antwortfrist für diesen Termin ist abgelaufen.");
+  }
+  if (status === "yes" && event.max_participants) {
+    const { count, error: countError } = await supabase
+      .from("event_responses")
+      .select("id", { count: "exact", head: true })
+      .eq("event_id", eventId)
+      .eq("status", "yes")
+      .neq("user_id", user.id);
+    if (countError) throw new Error(getUserFacingSupabaseError(countError, "Die freien Plätze konnten nicht geprüft werden."));
+    if ((count ?? 0) >= event.max_participants) throw new Error("Für diesen Termin sind bereits alle Plätze vergeben.");
   }
 
   const { error } = await supabase.from("event_responses").upsert(
