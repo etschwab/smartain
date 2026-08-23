@@ -1,11 +1,15 @@
 import Link from "next/link";
-import { ArrowDownRight, ArrowRight, CalendarDays, ClipboardCheck, UserRoundPlus, Users } from "lucide-react";
+import { ArrowDownRight, ArrowRight, BarChart3, CalendarDays, Car, ClipboardCheck, MessageCircle, UserRoundPlus, Users, Vote } from "lucide-react";
 
 const features = [
   { number: "01", title: "Teams & Rollen", description: "Owner, Coaches, Spieler und Eltern arbeiten mit klaren Rechten in einem gemeinsamen Teamraum.", icon: Users },
   { number: "02", title: "Termine & Zusagen", description: "Trainings, Spiele und Events mit Zusage, Absage, Vielleicht-Status und Kommentaren.", icon: CalendarDays },
   { number: "03", title: "Einladungen", description: "Neue Mitglieder treten per sicherem Link bei – ohne manuelle Listen oder verstreute Nachrichten.", icon: UserRoundPlus },
-  { number: "04", title: "Aufgaben", description: "Material, Fahrten und Organisation bleiben dort sichtbar, wo das Team ohnehin arbeitet.", icon: ClipboardCheck }
+  { number: "04", title: "Aufgaben", description: "Material, Checklisten und Zuständigkeiten bleiben dort sichtbar, wo das Team ohnehin arbeitet.", icon: ClipboardCheck },
+  { number: "05", title: "News & Team-Chat", description: "Wichtige Mitteilungen, schnelle Rückfragen und Teamwissen landen in einem gemeinsamen Verlauf.", icon: MessageCircle },
+  { number: "06", title: "Abstimmungen", description: "Entscheidungen werden mit klaren Optionen, Frist und sofort sichtbarem Ergebnis getroffen.", icon: Vote },
+  { number: "07", title: "Fahrten & Teamkasse", description: "Mitfahrplätze, Beiträge, Ausgaben und Strafen werden direkt im Team organisiert.", icon: Car },
+  { number: "08", title: "Aufstellung & Statistik", description: "Kader, Positionen, Anwesenheit und Rückmeldequoten geben Coaches den nötigen Überblick.", icon: BarChart3 }
 ];
 
 const workflow = [
@@ -35,7 +39,7 @@ export default function HomePage() {
             <p>Team-Management &amp; Training</p>
             <ArrowDownRight className="h-6 w-6 text-primary" aria-hidden="true" />
           </div>
-          <p className="max-w-xl text-base leading-7 text-muted-foreground sm:text-lg">Die ruhige Kommandozentrale für Teams, Termine, Zusagen, Einladungen und Aufgaben.</p>
+          <p className="max-w-xl text-base leading-7 text-muted-foreground sm:text-lg">Die ruhige Kommandozentrale für Termine, Zusagen, Kommunikation, Fahrten, Kasse und Spieltage.</p>
           <div className="smartrain-hero-actions">
             <Link href="/signup" className="editorial-link">Kostenlos starten <ArrowRight className="h-4 w-4" /></Link>
             <Link href="/login" className="editorial-link text-muted-foreground">Einloggen</Link>
@@ -50,7 +54,7 @@ export default function HomePage() {
             <p className="section-kicker">Funktionen</p>
             <h2>Alles Wichtige,<br /><span className="display-serif">ohne Lärm.</span></h2>
           </div>
-          <p>Smartrain organisiert die wiederkehrenden Abläufe eines Sportteams in klaren, mobilen Ansichten.</p>
+          <p>Smartrain organisiert den kompletten Teamalltag in klaren, mobilen Ansichten – vom Training bis zur Teamkasse.</p>
         </div>
         <div className="editorial-grid">
           {features.map((feature) => {

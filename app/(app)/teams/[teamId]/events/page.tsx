@@ -6,12 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { EventCalendar } from "@/components/team/event-calendar";
+import { SubmitButton } from "@/components/forms/submit-button";
 import { TeamTabs } from "@/components/team/team-tabs";
 import { StatsCard } from "@/components/stats-card";
 import { managerRoles } from "@/lib/constants";
 import { getTeamById, listTeamEvents } from "@/lib/data";
 import { getUserFacingSupabaseError, isRecoverableSetupError } from "@/lib/supabase-errors";
 import { requireTeamAccess } from "@/lib/supabase-server";
+import { importEventsCsvAction } from "@/lib/actions";
 import { formatDateTimeLabel, getEventTypeLabel, getResponseStatusLabel } from "@/lib/utils";
 
 type TeamEventsPageProps = {
@@ -92,6 +94,22 @@ export default async function TeamEventsPage({ params, searchParams }: TeamEvent
         <StatsCard title="Spiele" value={String(games)} description="Partien und Spieltage" icon={<CheckCircle2 className="h-5 w-5" />} />
         <StatsCard title="Offen" value={String(openResponses)} description="deine unbeantworteten Termine" icon={<Clock3 className="h-5 w-5" />} />
       </section>
+
+      {canManage ? (
+        <Card className="p-6">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="section-kicker">Spielplan-Import</p>
+              <h2 className="mt-2 text-2xl font-semibold">Mehrere Termine aus CSV</h2>
+              <p className="mt-2 text-sm text-muted-foreground">Spalten: title, type, starts_at, ends_at, location, description. Datum als ISO-Wert oder verständliches Datum.</p>
+            </div>
+            <form action={importEventsCsvAction.bind(null, team.id)} className="flex w-full max-w-xl flex-col gap-3 sm:flex-row sm:items-center">
+              <input name="file" type="file" accept=".csv,text/csv" required className="min-w-0 flex-1 border border-border bg-background/70 p-3 text-sm file:mr-3 file:border-0 file:bg-primary file:px-3 file:py-2 file:font-semibold file:text-primary-foreground" />
+              <SubmitButton variant="secondary" pendingLabel="Importiert...">CSV importieren</SubmitButton>
+            </form>
+          </div>
+        </Card>
+      ) : null}
 
       {events.length === 0 ? (
         <EmptyState

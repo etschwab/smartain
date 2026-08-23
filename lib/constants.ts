@@ -91,5 +91,21 @@ export const toastMessages: Record<string, string> = {
   "task-created": "Aufgabe erstellt",
   "task-updated": "Aufgabe aktualisiert",
   "task-removed": "Aufgabe entfernt",
-  "notifications-read": "Benachrichtigungen aktualisiert"
+  "notifications-read": "Benachrichtigungen aktualisiert",
+  "news-created": "Neuigkeit veröffentlicht",
+  "message-sent": "Nachricht gesendet",
+  "entry-removed": "Eintrag entfernt",
+  "poll-created": "Abstimmung erstellt",
+  "vote-saved": "Stimme gespeichert",
+  "absence-created": "Abwesenheit eingetragen",
+  "absence-removed": "Abwesenheit entfernt",
+  "carpool-created": "Fahrgemeinschaft angeboten",
+  "carpool-joined": "Mitfahrplatz reserviert",
+  "carpool-left": "Mitfahrplatz freigegeben",
+  "ledger-created": "Kasseneintrag erstellt",
+  "ledger-updated": "Kassenstatus aktualisiert",
+  "lineup-saved": "Aufstellung gespeichert",
+  "lineup-updated": "Aufstellung aktualisiert",
+  "events-created": "Terminserie erstellt",
+  "events-imported": "Termine importiert"
 };

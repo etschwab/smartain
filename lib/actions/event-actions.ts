@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { addWeeks } from "date-fns";
 import { requireProfile, requireTeamAccess, requireTeamManager } from "@/lib/supabase-server";
 import { getUserFacingSupabaseError, isRecoverableSetupError } from "@/lib/supabase-errors";
 
@@ -67,20 +68,25 @@ export async function createEventAction(teamId: string, formData: FormData) {
     throw new Error("Die Endzeit muss nach der Startzeit liegen.");
   }
 
-  const { data: event, error } = await supabase
+  const recurrenceCount = Math.min(52, Math.max(1, Number.parseInt(getString(formData, "recurrence_count") || "1", 10) || 1));
+  const startDate = new Date(startsAt);
+  const endDate = new Date(endsAt);
+  const payloads = Array.from({ length: recurrenceCount }, (_, index) => ({
+    team_id: teamId,
+    title,
+    type,
+    starts_at: addWeeks(startDate, index).toISOString(),
+    ends_at: addWeeks(endDate, index).toISOString(),
+    location: getNullableString(formData, "location"),
+    description: getNullableString(formData, "description"),
+    created_by: user.id
+  }));
+
+  const { data: events, error } = await supabase
     .from("events")
-    .insert({
-      team_id: teamId,
-      title,
-      type,
-      starts_at: new Date(startsAt).toISOString(),
-      ends_at: new Date(endsAt).toISOString(),
-      location: getNullableString(formData, "location"),
-      description: getNullableString(formData, "description"),
-      created_by: user.id
-    })
+    .insert(payloads)
     .select("*")
-    .single();
+    .order("starts_at", { ascending: true });
 
   if (error) {
     throw new Error(getUserFacingSupabaseError(error, "Der Termin konnte nicht erstellt werden."));
@@ -108,15 +114,72 @@ export async function createEventAction(teamId: string, formData: FormData) {
     (((membersResult.data as Array<{ user_id: string }>) ?? []).map((member) => member.user_id).filter((memberId) => memberId !== user.id)),
     {
       team_id: teamId,
-      event_id: event.id,
+      event_id: events?.[0]?.id ?? null,
       type: "event_created",
       title: titlePrefix,
-      body: `${profile.full_name ?? "Trainer"} hat "${event.title}" geplant.`,
-      action_path: `/teams/${teamId}/events/${event.id}`
+      body: `${profile.full_name ?? "Trainer"} hat "${title}"${recurrenceCount > 1 ? ` als Serie mit ${recurrenceCount} Terminen` : ""} geplant.`,
+      action_path: recurrenceCount > 1 ? `/teams/${teamId}/events` : `/teams/${teamId}/events/${events?.[0]?.id}`
     }
   );
 
-  redirect(`/teams/${teamId}/events/${event.id}?toast=event-created`);
+  redirect(recurrenceCount > 1 ? `/teams/${teamId}/events?toast=events-created` : `/teams/${teamId}/events/${events?.[0]?.id}?toast=event-created`);
+}
+
+function parseCsvLine(line: string, delimiter: string) {
+  const values: string[] = [];
+  let current = "";
+  let quoted = false;
+  for (let index = 0; index < line.length; index += 1) {
+    const character = line[index];
+    if (character === '"' && line[index + 1] === '"' && quoted) { current += '"'; index += 1; }
+    else if (character === '"') quoted = !quoted;
+    else if (character === delimiter && !quoted) { values.push(current.trim()); current = ""; }
+    else current += character;
+  }
+  values.push(current.trim());
+  return values;
+}
+
+export async function importEventsCsvAction(teamId: string, formData: FormData) {
+  const { supabase, user } = await requireTeamManager(teamId, `/teams/${teamId}/events`);
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) throw new Error("Bitte wähle eine CSV-Datei aus.");
+  if (file.size > 2_000_000) throw new Error("Die CSV-Datei darf maximal 2 MB groß sein.");
+
+  const content = (await file.text()).replace(/^\uFEFF/, "");
+  const lines = content.split(/\r?\n/).filter((line) => line.trim().length > 0);
+  if (lines.length < 2) throw new Error("Die CSV-Datei enthält keine Termine.");
+  if (lines.length > 501) throw new Error("Pro Import sind maximal 500 Termine möglich.");
+  const delimiter = lines[0].includes(";") ? ";" : ",";
+  const headers = parseCsvLine(lines[0], delimiter).map((header) => header.toLowerCase().trim());
+  const required = ["title", "starts_at", "ends_at"];
+  if (!required.every((column) => headers.includes(column))) throw new Error("Erforderliche CSV-Spalten: title, starts_at, ends_at.");
+
+  const rows = lines.slice(1).map((line, rowIndex) => {
+    const values = parseCsvLine(line, delimiter);
+    const value = (column: string) => values[headers.indexOf(column)]?.trim() ?? "";
+    const startsAt = new Date(value("starts_at"));
+    const endsAt = new Date(value("ends_at"));
+    const type = value("type") || "training";
+    if (!value("title") || Number.isNaN(startsAt.getTime()) || Number.isNaN(endsAt.getTime()) || endsAt <= startsAt) {
+      throw new Error(`Ungültige Daten in CSV-Zeile ${rowIndex + 2}.`);
+    }
+    if (!["training", "game", "meeting", "event"].includes(type)) throw new Error(`Ungültiger Typ in CSV-Zeile ${rowIndex + 2}.`);
+    return {
+      team_id: teamId,
+      title: value("title"),
+      type,
+      starts_at: startsAt.toISOString(),
+      ends_at: endsAt.toISOString(),
+      location: value("location") || null,
+      description: value("description") || null,
+      created_by: user.id
+    };
+  });
+
+  const { error } = await supabase.from("events").insert(rows);
+  if (error) throw new Error(getUserFacingSupabaseError(error, "Die Termine konnten nicht importiert werden."));
+  redirect(`/teams/${teamId}/events?toast=events-imported`);
 }
 
 export async function updateEventAction(teamId: string, eventId: string, formData: FormData) {

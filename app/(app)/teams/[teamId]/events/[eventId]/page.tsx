@@ -11,7 +11,8 @@ import { SubmitButton } from "@/components/forms/submit-button";
 import { TeamTabs } from "@/components/team/team-tabs";
 import { eventTypeOptions, responseStatusOptions, managerRoles } from "@/lib/constants";
 import { getEventById, getEventResponseCounts, getTeamById, listEventResponses, listTeamMembersDetailed } from "@/lib/data";
-import { deleteEventAction, respondToEventAction, updateEventAction } from "@/lib/actions";
+import { deleteEventAction, removeLineupEntryAction, respondToEventAction, setLineupEntryAction, updateEventAction } from "@/lib/actions";
+import { listEventLineup, profileName } from "@/lib/organization-data";
 import { requireTeamAccess } from "@/lib/supabase-server";
 import { formatDateTimeLabel, getEventTypeLabel, getResponseStatusLabel, toDateTimeLocalValue } from "@/lib/utils";
 
@@ -25,12 +26,13 @@ type EventDetailPageProps = {
 export default async function EventDetailPage({ params }: EventDetailPageProps) {
   const { teamId, eventId } = await params;
   const { supabase, membership, user } = await requireTeamAccess(teamId, `/teams/${teamId}/events/${eventId}`);
-  const [team, event, members, responses, counts] = await Promise.all([
+  const [team, event, members, responses, counts, lineup] = await Promise.all([
     getTeamById(supabase, teamId),
     getEventById(supabase, eventId),
     listTeamMembersDetailed(supabase, teamId),
     listEventResponses(supabase, eventId),
-    getEventResponseCounts(supabase, eventId, teamId)
+    getEventResponseCounts(supabase, eventId, teamId),
+    listEventLineup(supabase, eventId)
   ]);
 
   if (!team || !event || event.team_id !== team.id) {
@@ -153,6 +155,45 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
           </form>
         </Card>
       ) : null}
+
+      <section id="lineup" className="scroll-mt-28 grid gap-6 xl:grid-cols-[0.8fr,1.2fr]">
+        {canManage ? (
+          <Card className="p-6">
+            <p className="section-kicker">Aufstellung</p>
+            <h2 className="mt-2 text-2xl font-semibold">Kader festlegen</h2>
+            <p className="mt-2 text-sm text-muted-foreground">Füge Spieler zur Startformation oder Bank hinzu. Erneutes Speichern aktualisiert den Eintrag.</p>
+            <form action={setLineupEntryAction.bind(null, team.id, event.id)} className="mt-5 grid gap-4">
+              <Select name="user_id" required defaultValue="">
+                <option value="" disabled>Teammitglied wählen</option>
+                {members.filter((member) => member.status === "active").map((member) => (
+                  <option key={member.id} value={member.user_id}>{profileName(member.profile)}</option>
+                ))}
+              </Select>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Input name="position_label" placeholder="Position, z. B. Linker Flügel" />
+                <Select name="squad" defaultValue="starter"><option value="starter">Startformation</option><option value="bench">Bank</option></Select>
+              </div>
+              <Input name="note" placeholder="Optionale taktische Notiz" />
+              <SubmitButton pendingLabel="Wird gespeichert...">Zur Aufstellung hinzufügen</SubmitButton>
+            </form>
+          </Card>
+        ) : null}
+        <Card className="p-6">
+          <p className="section-kicker">Kader</p>
+          <h2 className="mt-2 text-2xl font-semibold">Startformation & Bank</h2>
+          <div className="mt-5 space-y-3">
+            {lineup.length ? lineup.map((entry) => (
+              <div key={entry.id} className="flex flex-col gap-3 border border-border bg-background/70 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <div className="flex flex-wrap items-center gap-2"><p className="font-semibold">{profileName(entry.profile)}</p><Badge variant={entry.is_starter ? "success" : "muted"}>{entry.is_starter ? "Start" : "Bank"}</Badge></div>
+                  <p className="mt-1 text-sm text-muted-foreground">{entry.position_label ?? "Position offen"}{entry.note ? ` · ${entry.note}` : ""}</p>
+                </div>
+                {canManage ? <form action={removeLineupEntryAction.bind(null, team.id, event.id, entry.id)}><ConfirmSubmit variant="ghost" confirmMessage="Aus der Aufstellung entfernen?">Entfernen</ConfirmSubmit></form> : null}
+              </div>
+            )) : <p className="text-sm text-muted-foreground">Noch keine Aufstellung gespeichert.</p>}
+          </div>
+        </Card>
+      </section>
 
       <section className="grid gap-6 xl:grid-cols-2">
         <Card className="p-6">

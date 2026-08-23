@@ -8,7 +8,9 @@ const tabs = [
   { label: "Übersicht", getHref: (teamId: string) => `/teams/${teamId}` },
   { label: "Mitglieder", getHref: (teamId: string) => `/teams/${teamId}/members` },
   { label: "Termine", getHref: (teamId: string) => `/teams/${teamId}/events` },
-  { label: "Aufgaben", getHref: (teamId: string) => `/teams/${teamId}/tasks` }
+  { label: "Aufgaben", getHref: (teamId: string) => `/teams/${teamId}/tasks` },
+  { label: "Teamzentrale", getHref: (teamId: string) => `/teams/${teamId}/organize` },
+  { label: "Statistik", getHref: (teamId: string) => `/teams/${teamId}/stats` }
 ];
 
 type TeamTabsProps = {
@@ -26,7 +28,7 @@ export function TeamTabs({ teamId, showAdmin = false }: TeamTabsProps) {
     <div className="flex gap-2 overflow-x-auto pb-1">
       {allTabs.map((tab) => {
         const href = tab.getHref(teamId);
-        const isActive = pathname === href || (href.endsWith("/admin") && pathname === `/teams/${teamId}/settings`);
+        const isActive = pathname === href || pathname.startsWith(`${href}/`) || (href.endsWith("/admin") && pathname === `/teams/${teamId}/settings`);
 
         return (
           <Link

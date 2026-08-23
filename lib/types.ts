@@ -136,3 +136,97 @@ export type EventResponseCounts = {
   maybe: number;
   pending: number;
 };
+
+export type TeamUpdate = {
+  id: string;
+  team_id: string;
+  author_id: string;
+  kind: "news" | "message";
+  title: string | null;
+  body: string;
+  is_pinned: boolean;
+  created_at: string;
+  updated_at: string;
+  author?: Profile | null;
+};
+
+export type PollOptionRecord = {
+  id: string;
+  poll_id: string;
+  label: string;
+  position: number;
+  votes: number;
+};
+
+export type PollRecord = {
+  id: string;
+  team_id: string;
+  question: string;
+  description: string | null;
+  closes_at: string | null;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  options: PollOptionRecord[];
+  own_option_id: string | null;
+};
+
+export type AbsenceRecord = {
+  id: string;
+  team_id: string;
+  user_id: string;
+  starts_on: string;
+  ends_on: string;
+  reason: "holiday" | "illness" | "injury" | "school" | "work" | "other";
+  note: string | null;
+  created_at: string;
+  updated_at: string;
+  profile?: Profile | null;
+};
+
+export type CarpoolRecord = {
+  id: string;
+  team_id: string;
+  event_id: string | null;
+  driver_id: string;
+  seats: number;
+  meeting_point: string;
+  departure_at: string | null;
+  note: string | null;
+  created_at: string;
+  updated_at: string;
+  driver?: Profile | null;
+  event?: EventRecord | null;
+  rider_ids: string[];
+};
+
+export type LedgerEntry = {
+  id: string;
+  team_id: string;
+  member_id: string | null;
+  created_by: string;
+  kind: "income" | "expense" | "fine" | "fee";
+  title: string;
+  note: string | null;
+  amount_cents: number;
+  status: "open" | "paid";
+  due_on: string | null;
+  paid_at: string | null;
+  created_at: string;
+  updated_at: string;
+  member?: Profile | null;
+};
+
+export type LineupEntry = {
+  id: string;
+  team_id: string;
+  event_id: string;
+  user_id: string;
+  position_label: string | null;
+  is_starter: boolean;
+  note: string | null;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  profile?: Profile | null;
+};

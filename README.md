@@ -29,21 +29,32 @@ Dann oeffne `http://localhost:3000`.
 2. Kopiere `Project URL` und `anon public key` nach `.env.local`.
 3. Oeffne in Supabase den SQL Editor.
 4. Fuehre `supabase/schema.sql` aus.
-5. Aktiviere unter `Authentication > Providers > Email` den Email-Login.
-6. Aktiviere dort auch `Email + Password`, wenn du klassische Registrierung und Passwort-Login willst.
-7. Setze unter `Authentication > URL Configuration` diese URLs:
+5. Fuehre anschliessend die Dateien in `supabase/migrations` in aufsteigender Reihenfolge aus. Für die Teamzentrale ist insbesondere `202608230001_team_organization_hub.sql` erforderlich.
+6. Aktiviere unter `Authentication > Providers > Email` den Email-Login.
+7. Aktiviere dort auch `Email + Password`, wenn du klassische Registrierung und Passwort-Login willst.
+8. Setze unter `Authentication > URL Configuration` diese URLs:
    - Site URL: `http://localhost:3000`
    - Additional Redirect URLs: `http://localhost:3000/auth/callback`
 
-## Was bereits funktioniert
+## Funktionsumfang
 
 - Registrierung mit E-Mail und Passwort
 - Login mit E-Mail und Passwort
 - Magic-Link-Login mit Supabase
 - Session-Callback fuer App Router
-- Teams, Spieler, Trainings und Spiele anlegen
-- Datenlisten auf allen Hauptseiten
-- Dashboard mit Kennzahlen und naechsten Terminen
+- Teams, Rollen, Spielerprofile und sichere Einladungslinks
+- Trainings, Spiele, Meetings, Serientermine und CSV-Spielplanimport
+- Zu-/Absagen mit Kommentaren, Teilnehmerübersicht und Benachrichtigungen
+- Aufgaben, Zuständigkeiten und terminbezogene Checklisten
+- Team-News, angeheftete Mitteilungen und Team-Chat
+- Abstimmungen mit Frist, Live-Ergebnis und eigener Stimme
+- Abwesenheiten für Ferien, Krankheit, Verletzung, Schule und Arbeit
+- Fahrgemeinschaften mit freien Plätzen und Reservierung
+- Teamkasse für Beiträge, Strafen, Einnahmen und Ausgaben
+- Aufstellungen mit Startformation, Bank, Position und Notizen
+- Anwesenheits-, Rückmelde- und Aufgabenstatistiken
+- ICS-Kalenderexport für den privaten Kalender
+- Responsive Oberfläche für Desktop und Mobile
 
 ## Deployment auf Vercel
 

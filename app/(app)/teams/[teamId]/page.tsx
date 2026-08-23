@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CalendarClock, ClipboardList, ShieldCheck, Users } from "lucide-react";
+import { BarChart3, CalendarClock, ClipboardList, MessageCircle, ShieldCheck, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -72,6 +72,18 @@ export default async function TeamOverviewPage({ params }: TeamPageProps) {
             <TeamTabs teamId={team.id} showAdmin={isOwner} />
           </div>
           <div className="flex flex-wrap gap-3">
+            <Button asChild variant="secondary">
+              <Link href={`/teams/${team.id}/organize`}>
+                <MessageCircle className="h-4 w-4" />
+                Teamzentrale
+              </Link>
+            </Button>
+            <Button asChild variant="secondary">
+              <Link href={`/teams/${team.id}/stats`}>
+                <BarChart3 className="h-4 w-4" />
+                Statistik
+              </Link>
+            </Button>
             {canManage ? (
               <>
                 <Button asChild>
