@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ThumbsDown, ThumbsUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -9,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ConfirmSubmit } from "@/components/confirm-submit";
 import { SubmitButton } from "@/components/forms/submit-button";
 import { TeamTabs } from "@/components/team/team-tabs";
-import { eventTypeOptions, responseStatusOptions, managerRoles } from "@/lib/constants";
+import { eventTypeOptions, managerRoles } from "@/lib/constants";
 import { getEventById, getEventResponseCounts, getTeamById, listEventResponses, listTeamMembersDetailed } from "@/lib/data";
 import { deleteEventAction, removeLineupEntryAction, respondToEventAction, setLineupEntryAction, toggleEventCancellationAction, updateEventAction, updateGameReportAction } from "@/lib/actions";
 import { listEventLineup, profileName } from "@/lib/organization-data";
@@ -78,15 +79,32 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
           <h2 className="mt-2 text-2xl font-semibold">Antwort absenden</h2>
           {event.response_deadline ? <p className="mt-2 text-sm text-muted-foreground">Antwortfrist: {formatDateTimeLabel(event.response_deadline)}</p> : null}
           <form action={respondToEventAction.bind(null, team.id, event.id)} className="mt-5 space-y-4">
-            <Select name="status" defaultValue={currentResponse?.status ?? "yes"}>
-              {responseStatusOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </Select>
+            <input type="hidden" name="return_path" value={`/teams/${team.id}/events/${event.id}`} />
             <Textarea name="comment" placeholder="Optionaler Kommentar" defaultValue={currentResponse?.comment ?? ""} />
-            <SubmitButton pendingLabel="Antwort wird gespeichert..." disabled={event.is_cancelled}>Antwort speichern</SubmitButton>
+            <div className="grid grid-cols-2 gap-3">
+              <SubmitButton
+                name="status"
+                value="yes"
+                pendingLabel="Speichert..."
+                disabled={event.is_cancelled}
+                variant={currentResponse?.status === "yes" ? "primary" : "secondary"}
+                aria-pressed={currentResponse?.status === "yes"}
+              >
+                <ThumbsUp className="h-4 w-4" />
+                Dabei
+              </SubmitButton>
+              <SubmitButton
+                name="status"
+                value="no"
+                pendingLabel="Speichert..."
+                disabled={event.is_cancelled}
+                variant={currentResponse?.status === "no" ? "danger" : "secondary"}
+                aria-pressed={currentResponse?.status === "no"}
+              >
+                <ThumbsDown className="h-4 w-4" />
+                Nicht dabei
+              </SubmitButton>
+            </div>
           </form>
         </Card>
 

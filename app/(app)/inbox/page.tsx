@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { StatsCard } from "@/components/stats-card";
+import { EventResponseButtons } from "@/components/team/event-response-buttons";
 import { markNotificationsReadAction } from "@/lib/actions";
 import { getDashboardData } from "@/lib/data";
 import { requireProfile } from "@/lib/supabase-server";
@@ -108,18 +109,27 @@ export default async function InboxPage() {
             <div className="space-y-3">
               {dashboard.pendingResponses.length > 0 ? (
                 dashboard.pendingResponses.map((event) => (
-                  <Link
+                  <div
                     key={event.id}
-                    href={`/teams/${event.team?.id ?? event.team_id}/events/${event.id}`}
                     className="block rounded-none border border-border bg-background/72 p-4 transition-colors hover:border-primary/30"
                   >
                     <div className="flex items-center justify-between gap-3">
-                      <p className="font-semibold">{event.title}</p>
+                      <Link href={`/teams/${event.team?.id ?? event.team_id}/events/${event.id}`} className="font-semibold hover:text-primary hover:underline">
+                        {event.title}
+                      </Link>
                       <Badge>{getEventTypeLabel(event.type)}</Badge>
                     </div>
                     <p className="mt-2 text-sm text-muted-foreground">{formatDateTimeLabel(event.starts_at)}</p>
                     {event.team ? <p className="mt-2 text-xs font-semibold text-primary">{event.team.name}</p> : null}
-                  </Link>
+                    <div className="mt-3">
+                      <EventResponseButtons
+                        teamId={event.team?.id ?? event.team_id}
+                        eventId={event.id}
+                        returnPath="/inbox"
+                        compact
+                      />
+                    </div>
+                  </div>
                 ))
               ) : (
                 <p className="rounded-none border border-dashed border-border bg-background/50 p-5 text-sm text-muted-foreground">

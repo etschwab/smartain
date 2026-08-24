@@ -6,10 +6,10 @@ import { Bell, CalendarDays, LayoutDashboard, ShieldCheck, Users } from "lucide-
 import { cn } from "@/lib/utils";
 
 const items = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/dashboard", label: "Start", icon: LayoutDashboard },
+  { href: "/calendar", label: "Termine", icon: CalendarDays },
   { href: "/teams", label: "Teams", icon: Users },
   { href: "/inbox", label: "Inbox", icon: Bell },
-  { href: "/calendar", label: "Kalender", icon: CalendarDays },
   { href: "/profile", label: "Profil", icon: ShieldCheck }
 ];
 

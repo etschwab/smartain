@@ -292,8 +292,16 @@ export async function updateGameReportAction(teamId: string, eventId: string, fo
 export async function respondToEventAction(teamId: string, eventId: string, formData: FormData) {
   const { supabase, profile, user } = await requireTeamAccess(teamId, `/teams/${teamId}/events/${eventId}`);
   const status = getString(formData, "status");
+  const requestedReturnPath = getNullableString(formData, "return_path");
+  const isAllowedReturnPath =
+    requestedReturnPath === "/dashboard" ||
+    requestedReturnPath === "/calendar" ||
+    requestedReturnPath === "/inbox" ||
+    (requestedReturnPath?.startsWith("/teams/") && !requestedReturnPath.includes("\\"));
+  const returnPath =
+    isAllowedReturnPath && requestedReturnPath ? requestedReturnPath : `/teams/${teamId}/events/${eventId}`;
 
-  if (!status) {
+  if (!status || !["yes", "no", "maybe"].includes(status)) {
     throw new Error("Bitte wähle eine Antwort aus.");
   }
 
@@ -363,5 +371,7 @@ export async function respondToEventAction(teamId: string, eventId: string, form
     action_path: `/teams/${teamId}/events/${eventId}`
   });
 
-  redirect(`/teams/${teamId}/events/${eventId}?toast=response-saved`);
+  const [pathAndQuery, hash] = returnPath.split("#", 2);
+  const separator = pathAndQuery.includes("?") ? "&" : "?";
+  redirect(`${pathAndQuery}${separator}toast=response-saved${hash ? `#${hash}` : ""}`);
 }

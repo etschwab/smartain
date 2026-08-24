@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { EventCalendar } from "@/components/team/event-calendar";
+import { EventResponseButtons } from "@/components/team/event-response-buttons";
 import { SubmitButton } from "@/components/forms/submit-button";
 import { TeamTabs } from "@/components/team/team-tabs";
 import { StatsCard } from "@/components/stats-card";
@@ -56,7 +57,14 @@ export default async function TeamEventsPage({ params, searchParams }: TeamEvent
   const view = filters.view === "calendar" ? "calendar" : "list";
   const trainings = events.filter((event) => event.type === "training").length;
   const games = events.filter((event) => event.type === "game").length;
-  const openResponses = events.filter((event) => !responseMap.has(event.id)).length;
+  const now = new Date().getTime();
+  const openResponses = events.filter(
+    (event) =>
+      !responseMap.has(event.id) &&
+      !event.is_cancelled &&
+      new Date(event.starts_at).getTime() >= now &&
+      (!event.response_deadline || new Date(event.response_deadline).getTime() >= now)
+  ).length;
 
   return (
     <div className="page-stack">
@@ -129,34 +137,51 @@ export default async function TeamEventsPage({ params, searchParams }: TeamEvent
         <div className="space-y-4">
           {events.map((event) => {
             const response = responseMap.get(event.id);
+            const canRespond =
+              !event.is_cancelled &&
+              new Date(event.starts_at).getTime() >= now &&
+              (!event.response_deadline || new Date(event.response_deadline).getTime() >= now);
 
             return (
-              <Link key={event.id} href={`/teams/${team.id}/events/${event.id}`}>
-                <Card className="p-6 transition-transform hover:-translate-y-1">
-                  <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                    <div className="space-y-3">
-                      <div className="flex flex-wrap items-center gap-3">
-                        <h2 className="text-2xl font-semibold">{event.title}</h2>
-                        <Badge>{getEventTypeLabel(event.type)}</Badge>
-                        {event.is_cancelled ? <Badge variant="danger">Abgesagt</Badge> : null}
-                        {response ? (
-                          <Badge variant={response === "yes" ? "success" : response === "no" ? "danger" : "muted"}>
-                            {getResponseStatusLabel(response)}
-                          </Badge>
-                        ) : (
-                          <Badge variant="muted">Antwort offen</Badge>
-                        )}
-                      </div>
-                      <p className="text-sm text-muted-foreground">{formatDateTimeLabel(event.starts_at)}</p>
-                      <p className="text-sm text-muted-foreground">{event.location ?? "Ort folgt"}</p>
+              <Card key={event.id} className="p-6 transition-transform hover:-translate-y-1">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <Link href={`/teams/${team.id}/events/${event.id}`} className="text-2xl font-semibold hover:text-primary hover:underline">
+                        {event.title}
+                      </Link>
+                      <Badge>{getEventTypeLabel(event.type)}</Badge>
+                      {event.is_cancelled ? <Badge variant="danger">Abgesagt</Badge> : null}
+                      {response ? (
+                        <Badge variant={response === "yes" ? "success" : response === "no" ? "danger" : "muted"}>
+                          {getResponseStatusLabel(response)}
+                        </Badge>
+                      ) : (
+                        <Badge variant="muted">Antwort offen</Badge>
+                      )}
                     </div>
-                    <Button variant="secondary" size="sm">
-                      <MessageSquare className="h-4 w-4" />
-                      Details
+                    <p className="text-sm text-muted-foreground">{formatDateTimeLabel(event.starts_at)}</p>
+                    <p className="text-sm text-muted-foreground">{event.location ?? "Ort folgt"}</p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {canRespond ? (
+                      <EventResponseButtons
+                        teamId={team.id}
+                        eventId={event.id}
+                        returnPath={`/teams/${team.id}/events`}
+                        currentStatus={response}
+                        compact
+                      />
+                    ) : null}
+                    <Button asChild variant="secondary" size="sm">
+                      <Link href={`/teams/${team.id}/events/${event.id}`}>
+                        <MessageSquare className="h-4 w-4" />
+                        Details
+                      </Link>
                     </Button>
                   </div>
-                </Card>
-              </Link>
+                </div>
+              </Card>
             );
           })}
         </div>

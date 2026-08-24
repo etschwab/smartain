@@ -1,19 +1,14 @@
 import Link from "next/link";
 import {
   ArrowRight,
-  CalendarClock,
-  ClipboardList,
-  MessageSquareMore,
   Plus,
-  ShieldCheck,
-  Trophy,
-  Users
+  Trophy
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
-import { StatsCard } from "@/components/stats-card";
+import { EventResponseButtons } from "@/components/team/event-response-buttons";
 import { managerRoles, MAX_OWNED_TEAMS } from "@/lib/constants";
 import { getDashboardData } from "@/lib/data";
 import { requireProfile } from "@/lib/supabase-server";
@@ -32,23 +27,23 @@ export default async function DashboardPage() {
   const managedTeams = dashboard.teams.filter((team) => managerRoles.includes(team.membership.role));
   const ownedTeams = dashboard.teams.filter((team) => team.membership.role === "owner");
   const quickManagedTeam = managedTeams[0] ?? null;
+  const nextTraining = dashboard.nextTrainings[0] ?? null;
   const canCreateTeam = ownedTeams.length < MAX_OWNED_TEAMS;
 
   return (
     <div className="page-stack">
       <section className="grid gap-6 xl:grid-cols-[1.15fr,0.85fr]">
-        <Card className="relative overflow-hidden border-red-200/70 bg-[linear-gradient(135deg,hsl(var(--card)),hsl(var(--accent)/0.48))] p-8 dark:border-red-500/15">
+        <Card className="relative overflow-hidden border-red-200/70 bg-[linear-gradient(135deg,hsl(var(--card)),hsl(var(--accent)/0.48))] p-6 dark:border-red-500/15">
           <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-primary/14 blur-3xl" />
           <div className="relative flex flex-col gap-8">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
               <div className="max-w-3xl space-y-4">
                 <p className="section-kicker">Dashboard</p>
-                <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
+                <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
                   Willkommen zurück, {getDisplayName(profile.full_name, profile.email)}.
                 </h1>
                 <p className="text-base leading-7 text-muted-foreground">
-                  Dein Matchday-Überblick für Termine, Zusagen, Aufgaben und Teams. Alles Wichtige ist jetzt klar
-                  getrennt: Inbox, Kalender und Profil haben eigene Bereiche.
+                  Deine nächsten Trainings, Antworten und Aufgaben auf einen Blick.
                 </p>
               </div>
               <div className="flex flex-wrap gap-3">
@@ -97,45 +92,27 @@ export default async function DashboardPage() {
           </div>
         </Card>
 
-        <Card className="p-8">
-          <p className="section-kicker">Schnellzugriff</p>
-          <h2 className="mt-2 text-2xl font-semibold">Deine wichtigsten Bereiche</h2>
-          <div className="mt-6 grid gap-3">
-            {[
-              { href: "/inbox", label: "Inbox öffnen", text: "Benachrichtigungen, offene Zusagen und Aufgaben.", icon: MessageSquareMore },
-              { href: "/calendar", label: "Kalender ansehen", text: "Alle Termine aus allen Teams in einer Ansicht.", icon: CalendarClock },
-              { href: "/profile", label: "Profil pflegen", text: "Kontaktdaten, Position und Notfallkontakt.", icon: ShieldCheck }
-            ].map((item) => {
-              const Icon = item.icon;
-
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="group flex items-center justify-between gap-4 rounded-none border border-border bg-background/70 p-4 transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:bg-accent/65"
-                >
-                  <span className="flex items-center gap-3">
-                    <span className="rounded-2xl bg-primary/10 p-3 text-primary">
-                      <Icon className="h-5 w-5" />
-                    </span>
-                    <span>
-                      <span className="block font-semibold">{item.label}</span>
-                      <span className="mt-1 block text-sm text-muted-foreground">{item.text}</span>
-                    </span>
-                  </span>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-primary" />
+        <Card className="p-6">
+          <p className="section-kicker">Als Nächstes</p>
+          <h2 className="mt-2 text-2xl font-semibold">Nächstes Training</h2>
+          {nextTraining ? (
+            <div className="mt-5">
+              <p className="text-xl font-semibold">{nextTraining.title}</p>
+              <p className="mt-2 text-sm text-muted-foreground">{formatDateTimeLabel(nextTraining.starts_at)}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{nextTraining.location ?? "Ort folgt"}</p>
+              <Button asChild className="mt-5 w-full">
+                <Link href={`/teams/${nextTraining.team_id}/events/${nextTraining.id}`}>
+                  Training öffnen
+                  <ArrowRight className="h-4 w-4" />
                 </Link>
-              );
-            })}
-          </div>
+              </Button>
+            </div>
+          ) : (
+            <div className="mt-5 rounded-none border border-dashed border-border p-5 text-sm text-muted-foreground">
+              Noch kein Training geplant.
+            </div>
+          )}
         </Card>
-      </section>
-
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <StatsCard title="Teams" value={String(dashboard.teams.length)} description="aktive Teamräume" icon={<Users className="h-5 w-5" />} />
-        <StatsCard title="Heute" value={String(dashboard.todayEvents.length)} description="Termine am heutigen Tag" icon={<CalendarClock className="h-5 w-5" />} />
-        <StatsCard title="Zusagen" value={String(dashboard.pendingResponses.length)} description="offene Antworten" icon={<MessageSquareMore className="h-5 w-5" />} />
-        <StatsCard title="Aufgaben" value={String(dashboard.assignedTasks.length)} description="deine offenen To-dos" icon={<ClipboardList className="h-5 w-5" />} />
       </section>
 
       {dashboard.teams.length === 0 ? (
@@ -244,18 +221,27 @@ export default async function DashboardPage() {
           <div className="mt-5 space-y-3">
             {dashboard.pendingResponses.length > 0 ? (
               dashboard.pendingResponses.slice(0, 4).map((event) => (
-                <Link
+                <div
                   key={event.id}
-                  href={`/teams/${event.team?.id ?? event.team_id}/events/${event.id}`}
                   className="block rounded-none border border-border bg-background/72 p-4 transition-colors hover:border-primary/30"
                 >
                   <div className="flex items-center justify-between gap-3">
-                    <p className="font-semibold">{event.title}</p>
+                    <Link href={`/teams/${event.team?.id ?? event.team_id}/events/${event.id}`} className="font-semibold hover:text-primary hover:underline">
+                      {event.title}
+                    </Link>
                     <Badge>{getEventTypeLabel(event.type)}</Badge>
                   </div>
                   <p className="mt-2 text-sm text-muted-foreground">{formatDateTimeLabel(event.starts_at)}</p>
                   {event.team ? <p className="mt-2 text-xs font-semibold text-primary">{event.team.name}</p> : null}
-                </Link>
+                  <div className="mt-3">
+                    <EventResponseButtons
+                      teamId={event.team?.id ?? event.team_id}
+                      eventId={event.id}
+                      returnPath="/dashboard"
+                      compact
+                    />
+                  </div>
+                </div>
               ))
             ) : (
               <div className="rounded-none border border-dashed border-border bg-background/50 p-5 text-sm text-muted-foreground">

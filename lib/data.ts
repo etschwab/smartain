@@ -512,6 +512,8 @@ export async function getDashboardData(supabase: AppSupabaseClient, userId: stri
     nextGames: events.filter((event) => event.type === "game").slice(0, 3),
     pendingResponses: events
       .filter((event) => new Date(event.starts_at).getTime() >= Date.now())
+      .filter((event) => !event.is_cancelled)
+      .filter((event) => !event.response_deadline || new Date(event.response_deadline).getTime() >= Date.now())
       .filter((event) => !responseMap.has(event.id))
       .slice(0, 5)
       .map((event) => ({

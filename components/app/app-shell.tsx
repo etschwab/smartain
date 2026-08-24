@@ -3,9 +3,10 @@ import { LogOut, Plus } from "lucide-react";
 import { Logo } from "@/components/branding/logo";
 import { AppNavigation } from "@/components/app/app-navigation";
 import { AppHeaderFrame } from "@/components/app/app-header-frame";
+import { TeamSwitcher } from "@/components/team/team-switcher";
 import { signOutAction } from "@/lib/actions";
 import { MAX_OWNED_TEAMS } from "@/lib/constants";
-import { getDisplayName, getTeamAccentColor } from "@/lib/utils";
+import { getDisplayName } from "@/lib/utils";
 import type { Profile, TeamWithMembership } from "@/lib/types";
 
 type AppShellProps = {
@@ -47,21 +48,11 @@ export function AppShell({ profile, teams, children }: AppShellProps) {
       </AppHeaderFrame>
 
       <main id="main-content" className="content-wrap pb-10 pt-28">
-        <div className="mb-10 flex items-center gap-2 overflow-x-auto border-y border-white/10 py-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <span className="mr-2 shrink-0 text-[0.68rem] font-bold uppercase tracking-[0.14em] text-muted-foreground">Deine Teams</span>
-          {teams.length > 0 ? (
-            teams.map((team) => {
-              const teamAccent = getTeamAccentColor(team.theme_color);
-              return (
-                <Link key={team.id} href={`/teams/${team.id}`} className="inline-flex shrink-0 items-center gap-2 rounded-full border border-white/10 bg-white/[0.025] px-4 py-2 text-sm font-medium transition-colors hover:border-primary/50 hover:text-primary">
-                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: teamAccent }} />
-                  {team.name}
-                </Link>
-              );
-            })
-          ) : (
-            <span className="text-sm text-muted-foreground">Noch kein Team angelegt</span>
-          )}
+        <div className="mb-6 flex items-center justify-between gap-3 border-y border-white/10 py-2.5">
+          <TeamSwitcher teams={teams} canCreateTeam={canCreateTeam} />
+          <Link href="/calendar" className="shrink-0 text-sm font-semibold text-primary hover:underline">
+            Nächstes Training
+          </Link>
         </div>
         {children}
       </main>

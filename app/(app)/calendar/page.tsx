@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { StatsCard } from "@/components/stats-card";
+import { EventResponseButtons } from "@/components/team/event-response-buttons";
 import { managerRoles } from "@/lib/constants";
 import { getUserCalendarData } from "@/lib/data";
 import { requireProfile } from "@/lib/supabase-server";
@@ -128,35 +129,55 @@ export default async function CalendarPage() {
                 <Badge variant="outline">{group.events.length} Termin{group.events.length === 1 ? "" : "e"}</Badge>
               </div>
               <div className="space-y-3">
-                {group.events.map((event) => (
-                  <Link
-                    key={event.id}
-                    href={`/teams/${event.team?.id ?? event.team_id}/events/${event.id}`}
-                    className="block rounded-none border border-border bg-background/72 p-4 transition-colors hover:border-primary/30"
-                  >
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                      <div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="font-semibold">{event.title}</h3>
-                          <Badge>{getEventTypeLabel(event.type)}</Badge>
-                          {event.response ? (
-                            <Badge variant={event.response.status === "yes" ? "success" : event.response.status === "no" ? "danger" : "muted"}>
-                              {getResponseStatusLabel(event.response.status)}
-                            </Badge>
-                          ) : (
-                            <Badge variant="muted">Antwort offen</Badge>
-                          )}
+                {group.events.map((event) => {
+                  const teamId = event.team?.id ?? event.team_id;
+                  const canRespond =
+                    !event.is_cancelled &&
+                    new Date(event.starts_at).getTime() >= now &&
+                    (!event.response_deadline || new Date(event.response_deadline).getTime() >= now);
+
+                  return (
+                    <div
+                      key={event.id}
+                      className="block rounded-none border border-border bg-background/72 p-4 transition-colors hover:border-primary/30"
+                    >
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Link href={`/teams/${teamId}/events/${event.id}`} className="font-semibold hover:text-primary hover:underline">
+                              {event.title}
+                            </Link>
+                            <Badge>{getEventTypeLabel(event.type)}</Badge>
+                            {event.response ? (
+                              <Badge variant={event.response.status === "yes" ? "success" : event.response.status === "no" ? "danger" : "muted"}>
+                                {getResponseStatusLabel(event.response.status)}
+                              </Badge>
+                            ) : (
+                              <Badge variant="muted">Antwort offen</Badge>
+                            )}
+                          </div>
+                          <p className="mt-2 text-sm text-muted-foreground">{formatDateTimeLabel(event.starts_at)}</p>
+                          <p className="mt-1 text-sm text-muted-foreground">{event.location ?? "Ort folgt"}</p>
                         </div>
-                        <p className="mt-2 text-sm text-muted-foreground">{formatDateTimeLabel(event.starts_at)}</p>
-                        <p className="mt-1 text-sm text-muted-foreground">{event.location ?? "Ort folgt"}</p>
+                        <div className="flex items-center gap-2 text-sm font-semibold text-primary">
+                          <CheckCircle2 className="h-4 w-4" />
+                          {event.team?.name ?? "Team"}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2 text-sm font-semibold text-primary">
-                        <CheckCircle2 className="h-4 w-4" />
-                        {event.team?.name ?? "Team"}
-                      </div>
+                      {canRespond ? (
+                        <div className="mt-4 border-t border-border pt-3">
+                          <EventResponseButtons
+                            teamId={teamId}
+                            eventId={event.id}
+                            returnPath="/calendar"
+                            currentStatus={event.response?.status}
+                            compact
+                          />
+                        </div>
+                      ) : null}
                     </div>
-                  </Link>
-                ))}
+                  );
+                })}
               </div>
             </Card>
           ))}
