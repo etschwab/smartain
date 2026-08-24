@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/card";
 import { FormError } from "@/components/ui/form-error";
 import { Input } from "@/components/ui/input";
 import { LoadingButton } from "@/components/ui/loading-button";
+import { setAuthPersistence } from "@/lib/auth-persistence";
 import { createClient } from "@/lib/supabase-browser";
 import { getUserFacingSupabaseError } from "@/lib/supabase-errors";
 
@@ -27,6 +28,7 @@ export function AuthForm({ mode, nextPath, initialMessage }: AuthFormProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(initialMessage ?? null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -125,6 +127,7 @@ export function AuthForm({ mode, nextPath, initialMessage }: AuthFormProps) {
           return;
         }
 
+        setAuthPersistence(rememberMe);
         toast.success("Willkommen zurück");
         router.replace(targetPath);
         router.refresh();
@@ -202,6 +205,7 @@ export function AuthForm({ mode, nextPath, initialMessage }: AuthFormProps) {
         return;
       }
 
+      setAuthPersistence(rememberMe);
       toast.success("Magic Link gesendet");
       setStatusMessage("Prüfe dein Postfach für den Login-Link.");
     } catch (error) {
@@ -299,6 +303,24 @@ export function AuthForm({ mode, nextPath, initialMessage }: AuthFormProps) {
               required
             />
           </div>
+        ) : null}
+
+        {!isSignup ? (
+          <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-border/70 bg-muted/35 px-4 py-3 transition-colors hover:border-primary/30 hover:bg-primary/5">
+            <input
+              type="checkbox"
+              name="remember_me"
+              checked={rememberMe}
+              onChange={(event) => setRememberMe(event.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-border text-primary focus:ring-primary"
+            />
+            <span className="space-y-0.5">
+              <span className="block text-sm font-semibold text-foreground">Angemeldet bleiben</span>
+              <span className="block text-xs leading-5 text-muted-foreground">
+                Du bleibst auf diesem Gerät eingeloggt, bis du dich abmeldest.
+              </span>
+            </span>
+          </label>
         ) : null}
 
         {errorMessage ? <FormError message={errorMessage} /> : null}

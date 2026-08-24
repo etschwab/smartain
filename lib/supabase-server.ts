@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import type { User } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { AUTH_PERSISTENCE_COOKIE, AUTH_SESSION_COOKIE } from "./auth-persistence";
 import { managerRoles } from "./constants";
 import { getSupabaseAnonKey, getSupabaseUrl } from "./env";
 import {
@@ -49,6 +50,13 @@ function loginPath(nextPath?: string, error?: string) {
 
 export async function getOptionalUser() {
   const supabase = await createClient();
+  const cookieStore = await cookies();
+  const usesBrowserSession = cookieStore.get(AUTH_PERSISTENCE_COOKIE)?.value === "session";
+  const hasActiveBrowserSession = cookieStore.get(AUTH_SESSION_COOKIE)?.value === "active";
+
+  if (usesBrowserSession && !hasActiveBrowserSession) {
+    return { supabase, user: null, authError: null };
+  }
 
   try {
     const {
