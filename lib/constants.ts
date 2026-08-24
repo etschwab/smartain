@@ -73,6 +73,7 @@ export const teamColorOptions = [
 ];
 
 export const toastMessages: Record<string, string> = {
+  "signed-out": "Du wurdest auf allen verbundenen Projekten abgemeldet",
   "team-created": "Team erstellt",
   "team-updated": "Team gespeichert",
   "profile-updated": "Profil aktualisiert",

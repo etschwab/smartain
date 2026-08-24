@@ -8,7 +8,7 @@ function normalizeSiteUrl(value: string) {
     throw new Error("NEXT_PUBLIC_SITE_URL ist keine gültige URL.");
   }
 
-  const isLoopback = ["localhost", "127.0.0.1", "::1"].includes(url.hostname);
+  const isLoopback = ["localhost", "127.0.0.1", "::1"].includes(url.hostname) || url.hostname.endsWith(".localhost");
 
   if (process.env.NODE_ENV === "production" && isLoopback) {
     throw new Error("NEXT_PUBLIC_SITE_URL darf in Produktion nicht auf localhost zeigen.");

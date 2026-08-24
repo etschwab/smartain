@@ -1,10 +1,11 @@
 import { createServerClient } from "@supabase/ssr";
-import type { User } from "@supabase/supabase-js";
+import { createClient as createSupabaseClient, type User } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { AUTH_PERSISTENCE_COOKIE, AUTH_SESSION_COOKIE } from "./auth-persistence";
 import { managerRoles } from "./constants";
 import { getSupabaseAnonKey, getSupabaseUrl } from "./env";
+import { SSO_ACCESS_COOKIE } from "./sso";
 import {
   getUserFacingSupabaseError,
   isRecoverableSetupError,
@@ -14,6 +15,22 @@ import type { Profile, TeamMember } from "./types";
 
 export async function createClient() {
   const cookieStore = await cookies();
+  const ssoAccessToken = cookieStore.get(SSO_ACCESS_COOKIE)?.value;
+
+  if (ssoAccessToken) {
+    return createSupabaseClient(getSupabaseUrl(), getSupabaseAnonKey(), {
+      auth: {
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+        persistSession: false
+      },
+      global: {
+        headers: {
+          Authorization: `Bearer ${ssoAccessToken}`
+        }
+      }
+    });
+  }
 
   return createServerClient(getSupabaseUrl(), getSupabaseAnonKey(), {
     cookies: {
