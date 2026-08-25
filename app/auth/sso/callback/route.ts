@@ -16,6 +16,7 @@ export const dynamic = "force-dynamic";
 function failureResponse(config: NonNullable<ReturnType<typeof getSsoConfig>>, error: string) {
   const response = NextResponse.redirect(new URL(`/login?error=${encodeURIComponent(error)}`, config.siteUrl));
   clearSsoFlowCookies(response);
+  response.headers.set("Referrer-Policy", "no-referrer");
   return response;
 }
 
@@ -55,6 +56,6 @@ export async function GET(request: NextRequest) {
   const response = NextResponse.redirect(new URL(nextPath, config.siteUrl));
   clearSsoFlowCookies(response);
   setSsoSessionCookies(response, tokens);
+  response.headers.set("Referrer-Policy", "no-referrer");
   return response;
 }
-

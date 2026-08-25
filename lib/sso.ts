@@ -17,6 +17,10 @@ export type SsoTokens = {
   expiresIn: number;
 };
 
+export type SsoRefreshResult =
+  | { tokens: SsoTokens; invalid: false }
+  | { tokens: null; invalid: boolean };
+
 export type SsoConfig = {
   authUrl: string;
   siteUrl: string;
@@ -142,29 +146,34 @@ function parseTokenResponse(value: unknown): SsoTokens | null {
   };
 }
 
-async function requestTokens(config: SsoConfig, body: URLSearchParams) {
-  const credentials = btoa(`${config.clientId}:${config.clientSecret}`);
-  const response = await fetch(config.tokenEndpoint, {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      Authorization: `Basic ${credentials}`,
-      "Content-Type": "application/x-www-form-urlencoded"
-    },
-    body,
-    cache: "no-store",
-    signal: AbortSignal.timeout(8_000)
-  });
+async function requestTokens(config: SsoConfig, body: URLSearchParams): Promise<SsoRefreshResult> {
+  try {
+    const credentials = btoa(`${config.clientId}:${config.clientSecret}`);
+    const response = await fetch(config.tokenEndpoint, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        Authorization: `Basic ${credentials}`,
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      body,
+      cache: "no-store",
+      signal: AbortSignal.timeout(8_000)
+    });
 
-  if (!response.ok) {
-    return null;
+    if (!response.ok) {
+      return { tokens: null, invalid: response.status === 400 || response.status === 401 };
+    }
+
+    const tokens = parseTokenResponse(await response.json());
+    return tokens ? { tokens, invalid: false } : { tokens: null, invalid: true };
+  } catch {
+    return { tokens: null, invalid: false };
   }
-
-  return parseTokenResponse(await response.json());
 }
 
-export function exchangeSsoCode(config: SsoConfig, code: string, verifier: string) {
-  return requestTokens(
+export async function exchangeSsoCode(config: SsoConfig, code: string, verifier: string) {
+  const result = await requestTokens(
     config,
     new URLSearchParams({
       grant_type: "authorization_code",
@@ -173,9 +182,11 @@ export function exchangeSsoCode(config: SsoConfig, code: string, verifier: strin
       code_verifier: verifier
     })
   );
+
+  return result.tokens;
 }
 
-export function refreshSsoTokens(config: SsoConfig, refreshToken: string) {
+export function refreshSsoTokens(config: SsoConfig, refreshToken: string): Promise<SsoRefreshResult> {
   return requestTokens(
     config,
     new URLSearchParams({
@@ -217,6 +228,7 @@ export function setSsoSessionCookies(response: NextResponse, tokens: SsoTokens) 
     secure: secureCookies(),
     sameSite: "lax",
     path: "/",
+    priority: "high",
     maxAge: tokens.expiresIn
   });
   response.cookies.set(SSO_REFRESH_COOKIE, tokens.refreshToken, {
@@ -224,6 +236,7 @@ export function setSsoSessionCookies(response: NextResponse, tokens: SsoTokens) 
     secure: secureCookies(),
     sameSite: "lax",
     path: "/",
+    priority: "high",
     maxAge: SSO_REFRESH_MAX_AGE
   });
   response.headers.set("Cache-Control", "private, no-store");

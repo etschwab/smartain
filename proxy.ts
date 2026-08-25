@@ -9,6 +9,25 @@ import {
   SSO_REFRESH_COOKIE
 } from "@/lib/sso";
 
+const refreshes = new Map<string, ReturnType<typeof refreshSsoTokens>>();
+
+function refreshOnce(config: NonNullable<ReturnType<typeof getSsoConfig>>, refreshToken: string) {
+  const pending = refreshes.get(refreshToken);
+
+  if (pending) {
+    return pending;
+  }
+
+  const refresh = refreshSsoTokens(config, refreshToken).finally(() => {
+    if (refreshes.get(refreshToken) === refresh) {
+      refreshes.delete(refreshToken);
+    }
+  });
+
+  refreshes.set(refreshToken, refresh);
+  return refresh;
+}
+
 function withUpdatedCookieHeader(currentHeader: string | null, updates: Record<string, string | null>) {
   const cookies = new Map<string, string>();
 
@@ -57,7 +76,8 @@ export async function proxy(request: NextRequest) {
   const refreshToken = request.cookies.get(SSO_REFRESH_COOKIE)?.value;
 
   if (config && refreshToken && (!accessToken || jwtExpiresSoon(accessToken))) {
-    const tokens = await refreshSsoTokens(config, refreshToken).catch(() => null);
+    const result = await refreshOnce(config, refreshToken);
+    const tokens = result.tokens;
 
     if (tokens) {
       requestHeaders.set(
@@ -72,16 +92,24 @@ export async function proxy(request: NextRequest) {
       return response;
     }
 
-    requestHeaders.set(
-      "cookie",
-      withUpdatedCookieHeader(request.headers.get("cookie"), {
-        [SSO_ACCESS_COOKIE]: null,
-        [SSO_REFRESH_COOKIE]: null
-      })
-    );
-    const response = NextResponse.next({ request: { headers: requestHeaders } });
-    clearSsoSessionCookies(response);
-    return response;
+    if (result.invalid) {
+      requestHeaders.set(
+        "cookie",
+        withUpdatedCookieHeader(request.headers.get("cookie"), {
+          [SSO_ACCESS_COOKIE]: null,
+          [SSO_REFRESH_COOKIE]: null
+        })
+      );
+      const response = NextResponse.next({ request: { headers: requestHeaders } });
+      clearSsoSessionCookies(response);
+      return response;
+    }
+
+    // Bei einem vorübergehenden Token-Endpunkt-Fehler bleiben die Cookies
+    // erhalten. Ein noch gültiges Token funktioniert weiter; ein abgelaufenes
+    // Token wird beim nächsten Request erneut erneuert statt den Nutzer
+    // vorschnell vollständig abzumelden.
+    return NextResponse.next({ request: { headers: requestHeaders } });
   }
 
   return NextResponse.next({

@@ -10,6 +10,9 @@ export async function signOutAction() {
   const cookieStore = await cookies();
   const hasSsoSession = Boolean(cookieStore.get(SSO_ACCESS_COOKIE) || cookieStore.get(SSO_REFRESH_COOKIE));
 
+  const supabase = await createClient();
+  await supabase.auth.signOut({ scope: "local" });
+
   if (hasSsoSession) {
     cookieStore.delete(SSO_ACCESS_COOKIE);
     cookieStore.delete(SSO_REFRESH_COOKIE);
@@ -25,7 +28,5 @@ export async function signOutAction() {
     }
   }
 
-  const supabase = await createClient();
-  await supabase.auth.signOut();
   redirect("/login");
 }
