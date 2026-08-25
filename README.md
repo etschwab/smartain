@@ -21,7 +21,7 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Ohne SSO-Konfiguration kannst du wie bisher `http://localhost:3000` öffnen. Mit den SSO-Werten aus `.env.example` öffnest du Smartrain unter `http://smartrain.localhost:3000`; das zentrale Kontoportal läuft unter `http://auth.localhost:3000`.
+Ohne SSO-Konfiguration kannst du wie bisher `http://localhost:3000` öffnen. Mit den SSO-Werten aus `.env.example` öffnest du Smartrain unter `http://smartrain.localhost:3000`; das separat gestartete Kontoportal läuft unter `http://auth.localhost:3001`.
 
 ## Supabase Setup
 
@@ -67,10 +67,10 @@ Ohne SSO-Konfiguration kannst du wie bisher `http://localhost:3000` öffnen. Mit
    - `NEXT_PUBLIC_AUTH_URL`
    - `SUPABASE_OAUTH_CLIENT_ID`
    - `SUPABASE_OAUTH_CLIENT_SECRET`
-   - `SSO_ALLOWED_HOSTS`
    - `SUPABASE_SERVICE_ROLE_KEY` (optional; nur für privilegierte Invite-Lookups)
-4. Dem Vercel-Projekt `smartrain.etienneschwab.ch` und `auth.etienneschwab.ch` zuweisen.
-5. Supabase OAuth Server und den vertraulichen Smartrain-Client wie in [`docs/SUPABASE_SSO.md`](docs/SUPABASE_SSO.md) konfigurieren.
+4. Diesem Vercel-Projekt ausschließlich `smartrain.etienneschwab.ch` zuweisen.
+5. `auth.etienneschwab.ch` separat aus dem Repository **esch-auth** deployen.
+6. Supabase OAuth Server und den vertraulichen Smartrain-Client wie in [`docs/SUPABASE_SSO.md`](docs/SUPABASE_SSO.md) konfigurieren.
 
 ## Hinweise fuer Produktion
 

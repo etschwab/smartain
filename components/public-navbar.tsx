@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, House, ListChecks, LogIn, Sparkles } from "lucide-react";
+import { ArrowRight, House, LayoutDashboard, ListChecks, LogIn, Sparkles } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useLayoutEffect } from "react";
 import { Logo } from "@/components/branding/logo";
@@ -12,15 +12,16 @@ const desktopItems = [
   { href: "/#workflow", label: "Ablauf" }
 ];
 
-const mobileItems = [
-  { href: "/", label: "Home", icon: House },
-  { href: "/#features", label: "Features", icon: Sparkles },
-  { href: "/#workflow", label: "Ablauf", icon: ListChecks },
-  { href: "/login", label: "Login", icon: LogIn }
-];
-
-export function PublicNavbar() {
+export function PublicNavbar({ isAuthenticated = false }: { isAuthenticated?: boolean }) {
   const pathname = usePathname();
+  const accountHref = isAuthenticated ? "/dashboard" : "/login";
+  const accountLabel = isAuthenticated ? "Dashboard" : "Einloggen";
+  const mobileItems = [
+    { href: "/", label: "Home", icon: House },
+    { href: "/#features", label: "Features", icon: Sparkles },
+    { href: "/#workflow", label: "Ablauf", icon: ListChecks },
+    { href: accountHref, label: isAuthenticated ? "Dashboard" : "Login", icon: isAuthenticated ? LayoutDashboard : LogIn }
+  ];
 
   useLayoutEffect(() => {
     const header = document.querySelector<HTMLElement>(".smart-site-header");
@@ -61,8 +62,8 @@ export function PublicNavbar() {
               })}
             </ul>
 
-            <Link href="/login" className={`smart-nav-action${pathname === "/login" ? " is-active" : ""}`}>
-              <span>Einloggen</span>
+            <Link href={accountHref} className={`smart-nav-action${pathname === accountHref ? " is-active" : ""}`}>
+              <span>{accountLabel}</span>
               <ArrowRight aria-hidden="true" size={17} strokeWidth={2.4} />
             </Link>
 
