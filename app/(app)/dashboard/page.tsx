@@ -1,9 +1,5 @@
 import Link from "next/link";
-import {
-  ArrowRight,
-  Plus,
-  Trophy
-} from "lucide-react";
+import { ArrowRight, Bell, CalendarClock, MapPin, Plus, Trophy } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -14,11 +10,14 @@ import { getDashboardData } from "@/lib/data";
 import { requireProfile } from "@/lib/supabase-server";
 import {
   formatDateTimeLabel,
+  formatEventCountdown,
   getDisplayName,
   getEventTypeLabel,
+  getResponseStatusLabel,
   getRoleLabel,
   getTaskStatusLabel,
-  getTeamAccentColor
+  getTeamAccentColor,
+  isFutureDate
 } from "@/lib/utils";
 
 export default async function DashboardPage() {
@@ -27,7 +26,9 @@ export default async function DashboardPage() {
   const managedTeams = dashboard.teams.filter((team) => managerRoles.includes(team.membership.role));
   const ownedTeams = dashboard.teams.filter((team) => team.membership.role === "owner");
   const quickManagedTeam = managedTeams[0] ?? null;
-  const nextTraining = dashboard.nextTrainings[0] ?? null;
+  const nextEvent = dashboard.upcomingEvents[0] ?? null;
+  const laterEvents = dashboard.upcomingEvents.slice(1, 4);
+  const unreadNotifications = dashboard.notifications.filter((notification) => !notification.is_read).length;
   const canCreateTeam = ownedTeams.length < MAX_OWNED_TEAMS;
 
   return (
@@ -72,7 +73,7 @@ export default async function DashboardPage() {
               </div>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               <div className="rounded-none border border-border bg-card/72 p-5">
                 <p className="text-sm font-medium text-muted-foreground">Heute</p>
                 <p className="mt-3 text-3xl font-semibold">{dashboard.todayEvents.length}</p>
@@ -88,28 +89,115 @@ export default async function DashboardPage() {
                 <p className="mt-3 text-3xl font-semibold">{dashboard.assignedTasks.length}</p>
                 <p className="mt-2 text-sm text-muted-foreground">Offene persönliche To-dos im Teamkontext.</p>
               </div>
+              <Link
+                href="/inbox"
+                className="rounded-none border border-border bg-card/72 p-5 transition-colors hover:border-primary/30 hover:bg-card"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-medium text-muted-foreground">Team-Pulse</p>
+                  <Bell className="h-4 w-4 text-primary" />
+                </div>
+                <p className="mt-3 text-3xl font-semibold">{unreadNotifications}</p>
+                <p className="mt-2 text-sm text-muted-foreground">Neue Updates aus deinen Teams.</p>
+              </Link>
             </div>
           </div>
         </Card>
 
-        <Card className="p-6">
-          <p className="section-kicker">Als Nächstes</p>
-          <h2 className="mt-2 text-2xl font-semibold">Nächstes Training</h2>
-          {nextTraining ? (
-            <div className="mt-5">
-              <p className="text-xl font-semibold">{nextTraining.title}</p>
-              <p className="mt-2 text-sm text-muted-foreground">{formatDateTimeLabel(nextTraining.starts_at)}</p>
-              <p className="mt-1 text-sm text-muted-foreground">{nextTraining.location ?? "Ort folgt"}</p>
-              <Button asChild className="mt-5 w-full">
-                <Link href={`/teams/${nextTraining.team_id}/events/${nextTraining.id}`}>
-                  Training öffnen
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </Button>
-            </div>
+        <Card className="overflow-hidden p-0">
+          {nextEvent ? (
+            <>
+              <div className="relative border-b border-border bg-[linear-gradient(145deg,hsl(var(--primary)/0.12),transparent_62%)] p-6">
+                <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-primary/10 blur-3xl" />
+                <div className="relative">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge>{getEventTypeLabel(nextEvent.type)}</Badge>
+                      {nextEvent.team ? <Badge variant="outline">{nextEvent.team.name}</Badge> : null}
+                    </div>
+                    <span className="text-sm font-semibold text-primary">
+                      {formatEventCountdown(nextEvent.starts_at)}
+                    </span>
+                  </div>
+
+                  <p className="section-kicker mt-7">Als Nächstes</p>
+                  <h2 className="mt-2 text-3xl font-semibold tracking-tight">{nextEvent.title}</h2>
+                  {nextEvent.opponent ? (
+                    <p className="mt-2 text-sm font-medium text-muted-foreground">gegen {nextEvent.opponent}</p>
+                  ) : null}
+
+                  <div className="mt-5 grid gap-3 text-sm text-muted-foreground sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+                    <span className="flex items-center gap-2">
+                      <CalendarClock className="h-4 w-4 text-primary" />
+                      {formatDateTimeLabel(nextEvent.starts_at)}
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-primary" />
+                      {nextEvent.location ?? "Ort folgt"}
+                    </span>
+                  </div>
+
+                  <div className="mt-6 flex flex-col gap-3 border-t border-border/80 pt-5 sm:flex-row sm:items-center sm:justify-between xl:flex-col xl:items-stretch 2xl:flex-row 2xl:items-center">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Dein Status</p>
+                      <p className="mt-1 text-sm font-semibold">
+                        {nextEvent.response ? getResponseStatusLabel(nextEvent.response.status) : "Noch nicht geantwortet"}
+                      </p>
+                    </div>
+                    <EventResponseButtons
+                      teamId={nextEvent.team?.id ?? nextEvent.team_id}
+                      eventId={nextEvent.id}
+                      returnPath="/dashboard"
+                      currentStatus={nextEvent.response?.status}
+                      disabled={nextEvent.response_deadline ? !isFutureDate(nextEvent.response_deadline) : false}
+                      compact
+                    />
+                  </div>
+
+                  <Button asChild className="mt-5 w-full">
+                    <Link href={`/teams/${nextEvent.team?.id ?? nextEvent.team_id}/events/${nextEvent.id}`}>
+                      Termin öffnen
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+
+              {laterEvents.length > 0 ? (
+                <div className="p-6">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Danach</p>
+                  <div className="mt-3 divide-y divide-border">
+                    {laterEvents.map((event) => (
+                      <Link
+                        key={event.id}
+                        href={`/teams/${event.team?.id ?? event.team_id}/events/${event.id}`}
+                        className="flex items-center justify-between gap-4 py-3 text-sm transition-colors hover:text-primary"
+                      >
+                        <span className="min-w-0">
+                          <span className="block truncate font-semibold">{event.title}</span>
+                          <span className="mt-0.5 block text-xs text-muted-foreground">
+                            {event.team?.name ?? getEventTypeLabel(event.type)}
+                          </span>
+                        </span>
+                        <span className="shrink-0 text-xs font-medium text-muted-foreground">
+                          {formatDateTimeLabel(event.starts_at)}
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </>
           ) : (
-            <div className="mt-5 rounded-none border border-dashed border-border p-5 text-sm text-muted-foreground">
-              Noch kein Training geplant.
+            <div className="p-6">
+              <p className="section-kicker">Als Nächstes</p>
+              <h2 className="mt-2 text-2xl font-semibold">Noch freie Bahn</h2>
+              <div className="mt-5 rounded-none border border-dashed border-border p-5 text-sm text-muted-foreground">
+                In den nächsten 30 Tagen ist noch kein Termin geplant.
+              </div>
+              <Button asChild variant="secondary" className="mt-5 w-full">
+                <Link href="/calendar">Kalender öffnen</Link>
+              </Button>
             </div>
           )}
         </Card>
