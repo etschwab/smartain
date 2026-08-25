@@ -39,6 +39,27 @@ export function formatDateTimeLabel(value: string | Date) {
   return format(date, "dd. MMM yyyy, HH:mm", { locale: de });
 }
 
+export function formatEventCountdown(value: string | Date, now = new Date()) {
+  const minutes = Math.ceil((new Date(value).getTime() - now.getTime()) / 60_000);
+
+  if (minutes <= 0) {
+    return "Startet jetzt";
+  }
+
+  if (minutes < 60) {
+    return `In ${minutes} Min.`;
+  }
+
+  if (minutes < 24 * 60) {
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+    return remainingMinutes > 0 ? `In ${hours} Std. ${remainingMinutes} Min.` : `In ${hours} Std.`;
+  }
+
+  const days = Math.ceil(minutes / (24 * 60));
+  return days === 1 ? "In 1 Tag" : `In ${days} Tagen`;
+}
+
 export function getInitials(name: string) {
   return name
     .split(" ")

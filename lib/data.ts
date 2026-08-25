@@ -413,6 +413,7 @@ export async function getDashboardData(supabase: AppSupabaseClient, userId: stri
       teams,
       notifications,
       todayEvents: [] as EventRecord[],
+      upcomingEvents: [] as EventWithTeam[],
       nextTrainings: [] as EventRecord[],
       nextGames: [] as EventRecord[],
       pendingResponses: [] as EventWithTeam[],
@@ -433,6 +434,7 @@ export async function getDashboardData(supabase: AppSupabaseClient, userId: stri
       teams,
       notifications,
       todayEvents: [] as EventRecord[],
+      upcomingEvents: [] as EventWithTeam[],
       nextTrainings: [] as EventRecord[],
       nextGames: [] as EventRecord[],
       pendingResponses: [] as EventWithTeam[],
@@ -461,6 +463,18 @@ export async function getDashboardData(supabase: AppSupabaseClient, userId: stri
     }
   }
 
+  const responseMap = new Map(responses.map((response) => [response.event_id, response]));
+  const teamMap = new Map(teams.map((team) => [team.id, team]));
+  const upcomingEvents = events
+    .filter((event) => new Date(event.starts_at).getTime() >= Date.now())
+    .filter((event) => !event.is_cancelled)
+    .slice(0, 5)
+    .map((event) => ({
+      ...event,
+      team: teamMap.get(event.team_id) ?? null,
+      response: responseMap.get(event.id) ?? null
+    })) satisfies EventWithTeam[];
+
   const { data: taskData, error: taskError } = await supabase
     .from("tasks")
     .select("*")
@@ -478,6 +492,7 @@ export async function getDashboardData(supabase: AppSupabaseClient, userId: stri
         const now = new Date();
         return eventDate.toDateString() === now.toDateString();
       }),
+      upcomingEvents,
       nextTrainings: events.filter((event) => event.type === "training").slice(0, 3),
       nextGames: events.filter((event) => event.type === "game").slice(0, 3),
       pendingResponses: [] as EventWithTeam[],
@@ -496,8 +511,6 @@ export async function getDashboardData(supabase: AppSupabaseClient, userId: stri
     event: task.event_id ? eventMap.get(task.event_id) ?? null : null
   })) satisfies TaskWithRelations[];
 
-  const responseMap = new Map(responses.map((response) => [response.event_id, response]));
-  const teamMap = new Map(teams.map((team) => [team.id, team]));
   const todayEvents = events.filter((event) => {
     const eventDate = new Date(event.starts_at);
     const now = new Date();
@@ -508,6 +521,7 @@ export async function getDashboardData(supabase: AppSupabaseClient, userId: stri
     teams,
     notifications,
     todayEvents,
+    upcomingEvents,
     nextTrainings: events.filter((event) => event.type === "training").slice(0, 3),
     nextGames: events.filter((event) => event.type === "game").slice(0, 3),
     pendingResponses: events
