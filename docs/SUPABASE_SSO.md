@@ -1,12 +1,12 @@
 # Zentrales Supabase-SSO
 
-Smartrain enthält sowohl das zentrale Kontoportal für `auth.etienneschwab.ch` als auch den OAuth-Client für `smartrain.etienneschwab.ch`. Beide Domains zeigen auf dasselbe Vercel-Projekt, speichern ihre Cookies aber getrennt pro Host.
+Das zentrale Portal läuft als eigenes Repository **esch-auth** auf `auth.etienneschwab.ch`. Smartrain enthält nur noch den OAuth-Client für `smartrain.etienneschwab.ch` sowie Callback, Token-Cookies und Refresh-Logik. Die beiden Domains werden als getrennte Vercel-Projekte deployed.
 
 ## Ablauf
 
 1. Smartrain leitet eine nicht angemeldete Person über `/auth/sso/start` zum Supabase-OAuth-Server.
 2. Supabase prüft Client, Callback und PKCE und öffnet `https://auth.etienneschwab.ch/oauth/consent`.
-3. Das Kontoportal meldet die Person mit Supabase Auth an und zeigt das anfragende Projekt sowie die angeforderten Angaben.
+3. **ESCH Account** meldet die Person mit Supabase Auth an und zeigt das anfragende Projekt sowie die angeforderten Angaben.
 4. Nach Zustimmung erhält Smartrain einen einmaligen Code und tauscht ihn serverseitig gegen eine eigene Sitzung ein.
 5. Weitere Projekte verwenden denselben Ablauf. Der zentrale Login-Cookie bleibt ausschließlich auf `auth.etienneschwab.ch`.
 

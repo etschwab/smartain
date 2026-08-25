@@ -80,63 +80,6 @@ export function getSsoConfig(): SsoConfig | null {
   };
 }
 
-export function requestHostname(headers: Headers) {
-  return (headers.get("x-forwarded-host") ?? headers.get("host") ?? "")
-    .split(":")[0]
-    .toLowerCase();
-}
-
-export function isAuthHostname(hostname: string) {
-  const authUrl = getAuthUrl();
-  return authUrl ? hostname.toLowerCase() === new URL(authUrl).hostname.toLowerCase() : false;
-}
-
-function configuredAllowedHosts() {
-  const configured = process.env.SSO_ALLOWED_HOSTS?.split(",")
-    .map((entry) => entry.trim().toLowerCase())
-    .filter(Boolean);
-
-  if (configured?.length) {
-    return configured;
-  }
-
-  const authUrl = getAuthUrl();
-
-  if (!authUrl) {
-    return ["localhost", ".localhost", "127.0.0.1"];
-  }
-
-  const hostname = new URL(authUrl).hostname.toLowerCase();
-  const labels = hostname.split(".");
-  const projectSuffix = labels.length >= 3 ? `.${labels.slice(1).join(".")}` : hostname;
-
-  return [projectSuffix, "localhost", ".localhost", "127.0.0.1"];
-}
-
-export function isAllowedSsoUrl(value: string) {
-  let url: URL;
-
-  try {
-    url = new URL(value);
-  } catch {
-    return false;
-  }
-
-  const isLocal = url.hostname === "localhost" || url.hostname.endsWith(".localhost") || url.hostname === "127.0.0.1";
-
-  if (process.env.NODE_ENV === "production" ? url.protocol !== "https:" : !["http:", "https:"].includes(url.protocol)) {
-    return false;
-  }
-
-  if (process.env.NODE_ENV === "production" && isLocal) {
-    return false;
-  }
-
-  return configuredAllowedHosts().some((entry) =>
-    entry.startsWith(".") ? url.hostname.toLowerCase().endsWith(entry) : url.hostname.toLowerCase() === entry
-  );
-}
-
 function randomBase64Url(byteLength = 32) {
   const bytes = crypto.getRandomValues(new Uint8Array(byteLength));
   let binary = "";

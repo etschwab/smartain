@@ -19,13 +19,11 @@ type AuthFormProps = {
   mode: "login" | "signup";
   nextPath?: string;
   initialMessage?: string;
-  centralAuth?: boolean;
 };
 
 const configuredSiteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, "");
-const configuredAuthUrl = process.env.NEXT_PUBLIC_AUTH_URL?.trim().replace(/\/$/, "");
 
-export function AuthForm({ mode, nextPath, initialMessage, centralAuth = false }: AuthFormProps) {
+export function AuthForm({ mode, nextPath, initialMessage }: AuthFormProps) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -36,13 +34,13 @@ export function AuthForm({ mode, nextPath, initialMessage, centralAuth = false }
   const [errorMessage, setErrorMessage] = useState<string | null>(initialMessage ?? null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
-  const targetPath = safeLocalPath(nextPath, centralAuth ? "/account" : "/dashboard");
+  const targetPath = safeLocalPath(nextPath, "/dashboard");
   const isSignup = mode === "signup";
 
   function getEmailRedirectTo() {
     let origin = window.location.origin;
 
-    const configuredRedirectOrigin = centralAuth ? configuredAuthUrl : configuredSiteUrl;
+    const configuredRedirectOrigin = configuredSiteUrl;
 
     if (configuredRedirectOrigin) {
       try {
@@ -225,23 +223,19 @@ export function AuthForm({ mode, nextPath, initialMessage, centralAuth = false }
   return (
     <Card className="mx-auto w-full max-w-lg overflow-hidden p-8 sm:p-10">
       <div className="mb-8 flex flex-col items-center gap-4 text-center">
-        <AuthBrand central={centralAuth} />
+        <AuthBrand />
         <div className="space-y-2">
           <h1 className="text-3xl font-semibold">
-            {mode === "login" ? "Willkommen zurück" : centralAuth ? "Erstelle dein zentrales Konto" : "Erstelle deinen Account"}
+            {mode === "login" ? "Willkommen zurück" : "Erstelle deinen Account"}
           </h1>
           <p className="text-sm text-muted-foreground">
             {mode === "login"
-              ? centralAuth
-                ? "Ein Login für Smartrain und alle zukünftigen Etienne-Projekte."
-                : "Logge dich ein und spring direkt ins Team-Dashboard."
-              : centralAuth
-                ? "Deine Zugangsdaten bleiben beim zentralen Konto und werden nicht an einzelne Projekte weitergegeben."
-                : "Starte dein Team, lade Mitglieder ein und plane eure nächsten Termine."}
+              ? "Logge dich ein und spring direkt ins Team-Dashboard."
+              : "Starte dein Team, lade Mitglieder ein und plane eure nächsten Termine."}
           </p>
           {nextPath ? (
             <p className="text-xs font-medium text-primary">
-              {centralAuth ? "Nach der Anmeldung geht es sicher zurück zum angefragten Projekt." : `Nach dem Login geht es direkt weiter zu ${nextPath}.`}
+              Nach dem Login geht es direkt weiter zu {nextPath}.
             </p>
           ) : null}
         </div>
