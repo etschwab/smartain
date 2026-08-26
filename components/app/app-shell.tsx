@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarDays, LogOut, Plus, Sparkles } from "lucide-react";
+import { CalendarDays, LogOut, Plus } from "lucide-react";
 import { Logo } from "@/components/branding/logo";
 import { AppNavigation } from "@/components/app/app-navigation";
 import { TeamSwitcher } from "@/components/team/team-switcher";
@@ -22,11 +22,11 @@ export function AppShell({ profile, teams, children }: AppShellProps) {
     <div className="min-h-screen pb-24 lg:pb-0">
       <a className="skip-link" href="#main-content">Zum Inhalt springen</a>
 
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-[17rem] flex-col border-r border-border/80 bg-card/75 backdrop-blur-2xl lg:flex">
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-[17rem] flex-col border-r border-border bg-background/95 lg:flex">
         <div className="border-b border-border/70 px-5 py-5">
           <Logo href="/dashboard" />
-          <div className="mt-5 flex items-center gap-2 rounded-xl border border-primary/15 bg-primary/[0.06] px-3 py-2.5">
-            <Sparkles className="h-4 w-4 text-primary" />
+          <div className="mt-5 flex items-center gap-2 border-l-2 border-primary px-3 py-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-primary" />
             <span className="text-xs font-semibold text-muted-foreground">Team Workspace</span>
           </div>
         </div>
@@ -40,7 +40,7 @@ export function AppShell({ profile, teams, children }: AppShellProps) {
           {canCreateTeam ? (
             <Link
               href="/teams/new"
-              className="mb-3 flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-bold text-primary-foreground transition-all hover:-translate-y-0.5 hover:bg-ring"
+              className="mb-3 flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-bold text-primary-foreground transition-colors hover:bg-ring"
             >
               <Plus className="h-4 w-4" />
               Neues Team
@@ -50,9 +50,9 @@ export function AppShell({ profile, teams, children }: AppShellProps) {
               {ownedTeamsCount}/{MAX_OWNED_TEAMS} eigene Teams
             </p>
           )}
-          <div className="flex items-center gap-2 rounded-xl border border-border/80 bg-background/50 p-2">
-            <Link href="/profile" className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg p-1 hover:bg-white/[0.04]">
-              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/15 text-xs font-black text-primary">
+          <div className="flex items-center gap-2 rounded-xl border border-border bg-card p-2">
+            <Link href="/profile" className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg p-1 hover:bg-muted/60">
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-border bg-muted text-xs font-black text-foreground">
                 {getInitials(getDisplayName(profile.full_name, profile.email))}
               </span>
               <span className="min-w-0">
@@ -61,7 +61,7 @@ export function AppShell({ profile, teams, children }: AppShellProps) {
               </span>
             </Link>
             <form action={signOutAction}>
-              <button type="submit" className="grid h-9 w-9 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-white/[0.06] hover:text-primary" aria-label="Abmelden">
+              <button type="submit" className="grid h-9 w-9 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground" aria-label="Abmelden">
                 <LogOut className="h-4 w-4" />
               </button>
             </form>
@@ -70,7 +70,7 @@ export function AppShell({ profile, teams, children }: AppShellProps) {
       </aside>
 
       <div className="lg:pl-[17rem]">
-        <header className="sticky top-0 z-30 border-b border-border/80 bg-background/82 backdrop-blur-xl">
+        <header className="sticky top-0 z-30 border-b border-border bg-background/95">
           <div className="content-wrap flex min-h-16 items-center justify-between gap-3 py-2">
             <Logo href="/dashboard" compact className="lg:hidden" />
             <div className="hidden min-w-0 lg:block">
@@ -79,7 +79,7 @@ export function AppShell({ profile, teams, children }: AppShellProps) {
             <div className="ml-auto flex items-center gap-2">
               <Link
                 href="/calendar"
-                className="hidden items-center gap-2 rounded-xl border border-border bg-card/70 px-3 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:border-primary/30 hover:text-primary sm:inline-flex"
+                className="hidden items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:inline-flex"
               >
                 <CalendarDays className="h-4 w-4" />
                 Kalender
@@ -96,7 +96,7 @@ export function AppShell({ profile, teams, children }: AppShellProps) {
               <Link
                 href="/profile"
                 aria-label="Profil öffnen"
-                className="grid h-10 w-10 place-items-center rounded-xl border border-border bg-card/70 text-xs font-black text-primary transition-colors hover:border-primary/30 lg:hidden"
+                className="grid h-10 w-10 place-items-center rounded-xl border border-border bg-card text-xs font-black text-foreground transition-colors hover:bg-muted lg:hidden"
               >
                 {getInitials(getDisplayName(profile.full_name, profile.email))}
               </Link>
@@ -114,7 +114,7 @@ export function AppShell({ profile, teams, children }: AppShellProps) {
         </main>
       </div>
 
-      <div className="fixed inset-x-3 bottom-[max(0.5rem,env(safe-area-inset-bottom))] z-50 h-[4.35rem] rounded-2xl border border-border/90 bg-card/92 p-1.5 shadow-[0_1rem_3rem_rgb(0_0_0/0.38)] backdrop-blur-2xl lg:hidden">
+      <div className="fixed inset-x-3 bottom-[max(0.5rem,env(safe-area-inset-bottom))] z-50 h-[4.35rem] rounded-2xl border border-border bg-background/95 p-1.5 shadow-[0_0.75rem_2rem_rgb(0_0_0/0.24)] lg:hidden">
         <AppNavigation variant="mobile" />
       </div>
     </div>

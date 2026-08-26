@@ -4,9 +4,9 @@ import { useEffect } from "react";
 import { GradientWaves } from "@/components/effects/gradient-waves";
 
 const colors = {
-  horizonColor: "#21070D",
-  waveColor: "#6E1F32",
-  crestColor: "#F33F55"
+  horizonColor: "#12080B",
+  waveColor: "#351117",
+  crestColor: "#8F2835"
 } as const;
 
 export function GradientWavesBackground() {

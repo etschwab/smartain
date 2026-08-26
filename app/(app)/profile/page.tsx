@@ -19,10 +19,10 @@ export default async function ProfilePage() {
   return (
     <div className="page-stack">
       <Card className="relative overflow-hidden border-red-200/70 bg-[linear-gradient(135deg,hsl(var(--card)),hsl(var(--accent)/0.58))] p-8 dark:border-red-500/15">
-        <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-primary/14 blur-3xl" />
+        <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-primary/[0.05] blur-3xl" />
         <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="flex items-start gap-5">
-            <div className="flex h-16 w-16 flex-none items-center justify-center rounded-none bg-primary text-xl font-black text-primary-foreground shadow-[0_18px_42px_-24px_hsl(var(--primary)/0.8)]">
+            <div className="flex h-16 w-16 flex-none items-center justify-center rounded-none bg-primary text-xl font-black text-primary-foreground">
               {getDisplayName(profile.full_name, profile.email).slice(0, 2).toUpperCase()}
             </div>
             <div className="max-w-3xl">

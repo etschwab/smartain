@@ -43,16 +43,16 @@ export function AppNavigation({ variant = "sidebar", onNavigate }: AppNavigation
                 ? "flex h-full flex-col items-center justify-center gap-1 rounded-xl px-1 py-1.5 text-[0.62rem] font-semibold leading-none"
                 : "flex items-center gap-3 rounded-xl border border-transparent px-3 py-2.5",
               isActive && !isMobile &&
-                "border-primary/15 bg-[linear-gradient(90deg,hsl(var(--primary)/0.13),hsl(var(--primary)/0.03))] text-foreground shadow-[inset_3px_0_0_hsl(var(--primary))]",
-              isActive && isMobile && "bg-primary/[0.13] text-primary",
-              !isActive && "text-muted-foreground hover:bg-white/[0.05] hover:text-foreground"
+                "border-border bg-muted/70 text-foreground before:absolute before:inset-y-3 before:left-0 before:w-0.5 before:rounded-full before:bg-primary",
+              isActive && isMobile && "bg-muted text-foreground",
+              !isActive && "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
             )}
           >
             <span
               className={cn(
                 "grid shrink-0 place-items-center transition-all duration-200",
-                isMobile ? "h-6 w-6" : "h-9 w-9 rounded-lg bg-white/[0.04] group-hover:bg-white/[0.07]",
-                isActive && !isMobile && "bg-primary/15 text-primary"
+                isMobile ? "h-6 w-6" : "h-9 w-9 rounded-lg bg-muted group-hover:bg-muted/80",
+                isActive && !isMobile && "bg-background text-primary"
               )}
             >
               <Icon className={cn("h-4 w-4", isMobile && "h-5 w-5")} />
@@ -68,13 +68,13 @@ export function AppNavigation({ variant = "sidebar", onNavigate }: AppNavigation
                 <ChevronRight
                   className={cn(
                     "h-4 w-4 -translate-x-1 opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-60",
-                    isActive && "translate-x-0 text-primary opacity-80"
+                    isActive && "translate-x-0 text-muted-foreground opacity-80"
                   )}
                 />
               </>
             )}
             {isActive && isMobile ? (
-              <span aria-hidden="true" className="absolute inset-x-4 top-0 h-0.5 rounded-full bg-primary" />
+              <span aria-hidden="true" className="absolute left-1/2 top-0 h-0.5 w-5 -translate-x-1/2 rounded-full bg-primary" />
             ) : null}
           </Link>
         );

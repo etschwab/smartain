@@ -35,7 +35,7 @@ export default async function DashboardPage() {
     <div className="page-stack">
       <section className="grid gap-6 xl:grid-cols-[1.15fr,0.85fr]">
         <Card className="relative overflow-hidden border-red-200/70 bg-[linear-gradient(135deg,hsl(var(--card)),hsl(var(--accent)/0.48))] p-6 dark:border-red-500/15">
-          <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-primary/14 blur-3xl" />
+          <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-primary/[0.05] blur-3xl" />
           <div className="relative flex flex-col gap-8">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
               <div className="max-w-3xl space-y-4">
@@ -108,7 +108,7 @@ export default async function DashboardPage() {
           {nextEvent ? (
             <>
               <div className="relative border-b border-border bg-[linear-gradient(145deg,hsl(var(--primary)/0.12),transparent_62%)] p-6">
-                <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-primary/10 blur-3xl" />
+                <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-primary/[0.04] blur-3xl" />
                 <div className="relative">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="flex flex-wrap items-center gap-2">
