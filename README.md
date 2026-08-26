@@ -29,7 +29,7 @@ Ohne SSO-Konfiguration kannst du wie bisher `http://localhost:3000` öffnen. Mit
 2. Kopiere `Project URL` und `anon public key` nach `.env.local`.
 3. Oeffne in Supabase den SQL Editor.
 4. Fuehre `supabase/schema.sql` aus.
-5. Fuehre anschliessend die Dateien in `supabase/migrations` in aufsteigender Reihenfolge aus. Für die Teamzentrale ist insbesondere `202608230001_team_organization_hub.sql` erforderlich.
+5. Fuehre anschliessend die Dateien in `supabase/migrations` in aufsteigender Reihenfolge aus. Für Terminvorlagen muss auch `202608260001_event_templates.sql` ausgeführt sein.
 6. Aktiviere unter `Authentication > Providers > Email` den Email-Login.
 7. Aktiviere dort auch `Email + Password`, wenn du klassische Registrierung und Passwort-Login willst.
 8. Für den zentralen Login folge der vollständigen Anleitung in [`docs/SUPABASE_SSO.md`](docs/SUPABASE_SSO.md).
@@ -42,17 +42,10 @@ Ohne SSO-Konfiguration kannst du wie bisher `http://localhost:3000` öffnen. Mit
 - Zentrales OAuth-2.1-SSO über `auth.etienneschwab.ch`
 - PKCE, getrennte HttpOnly-Projekt-Sitzungen und automatische Token-Erneuerung
 - Zentrale Projektzustimmung und globales Logout
-- Teams, Rollen, Spielerprofile und sichere Einladungslinks
-- Trainings, Spiele, Meetings, Serientermine und CSV-Spielplanimport
-- Zu-/Absagen mit Kommentaren, Teilnehmerübersicht und Benachrichtigungen
-- Aufgaben, Zuständigkeiten und terminbezogene Checklisten
-- Team-News, angeheftete Mitteilungen und Team-Chat
-- Abstimmungen mit Frist, Live-Ergebnis und eigener Stimme
-- Abwesenheiten für Ferien, Krankheit, Verletzung, Schule und Arbeit
-- Fahrgemeinschaften mit freien Plätzen und Reservierung
-- Teamkasse für Beiträge, Strafen, Einnahmen und Ausgaben
-- Aufstellungen mit Startformation, Bank, Position und Notizen
-- Anwesenheits-, Rückmelde- und Aufgabenstatistiken
+- Teams und Rollen mit sicheren Einladungslinks
+- Mitglieder einladen, verwalten und entfernen
+- Trainings und Events einzeln oder als wöchentliche Serie erstellen
+- Terminvorlagen wie „Dienstagstraining“ speichern und den nächsten freien Termin mit einem Klick anlegen
 - ICS-Kalenderexport für den privaten Kalender
 - Responsive Oberfläche für Desktop und Mobile
 
