@@ -144,6 +144,21 @@ export type EventResponseCounts = {
   pending: number;
 };
 
+export type EventTemplate = {
+  id: string;
+  team_id: string;
+  name: string;
+  title: string;
+  type: EventType;
+  source_starts_at: string;
+  duration_minutes: number;
+  location: string | null;
+  description: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type TeamUpdate = {
   id: string;
   team_id: string;

@@ -88,6 +88,8 @@ export const toastMessages: Record<string, string> = {
   "event-created": "Termin erstellt",
   "event-updated": "Termin gespeichert",
   "event-removed": "Termin gelöscht",
+  "event-from-template-created": "Termin aus Vorlage erstellt",
+  "event-template-deleted": "Vorlage gelöscht",
   "response-saved": "Antwort gespeichert",
   "task-created": "Aufgabe erstellt",
   "task-updated": "Aufgabe aktualisiert",

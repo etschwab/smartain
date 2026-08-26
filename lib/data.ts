@@ -5,6 +5,7 @@ import type {
   EventRecord,
   EventResponseCounts,
   EventResponseRecord,
+  EventTemplate,
   EventWithTeam,
   MemberWithProfile,
   NotificationRecord,
@@ -299,6 +300,21 @@ export async function listTeamEvents(supabase: AppSupabaseClient, teamId: string
 
   assertNoError(error, "Termine konnten nicht geladen werden");
   return ((data as EventRecord[]) ?? []) as EventRecord[];
+}
+
+export async function listEventTemplates(supabase: AppSupabaseClient, teamId: string) {
+  const { data, error } = await supabase
+    .from("event_templates")
+    .select("*")
+    .eq("team_id", teamId)
+    .order("name", { ascending: true });
+
+  if (isRecoverableSetupError(error)) {
+    return [] satisfies EventTemplate[];
+  }
+
+  assertNoError(error, "Terminvorlagen konnten nicht geladen werden");
+  return ((data as EventTemplate[]) ?? []) as EventTemplate[];
 }
 
 export async function getEventById(supabase: AppSupabaseClient, eventId: string) {

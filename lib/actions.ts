@@ -9,4 +9,11 @@ export {
   toggleInviteAction,
   updateMemberRoleAction
 } from "@/lib/actions/team-actions";
-export { createEventAction, deleteEventAction, toggleEventCancellationAction, updateEventAction } from "@/lib/actions/event-actions";
+export {
+  createEventAction,
+  createEventFromTemplateAction,
+  deleteEventAction,
+  deleteEventTemplateAction,
+  toggleEventCancellationAction,
+  updateEventAction
+} from "@/lib/actions/event-actions";
