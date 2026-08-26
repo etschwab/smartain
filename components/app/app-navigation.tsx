@@ -2,33 +2,30 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, CalendarDays, LayoutDashboard, ShieldCheck, Users } from "lucide-react";
+import { Bell, CalendarDays, ChevronRight, LayoutDashboard, ShieldCheck, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const items = [
-  { href: "/dashboard", label: "Start", icon: LayoutDashboard },
-  { href: "/calendar", label: "Termine", icon: CalendarDays },
-  { href: "/teams", label: "Teams", icon: Users },
-  { href: "/inbox", label: "Inbox", icon: Bell },
-  { href: "/profile", label: "Profil", icon: ShieldCheck }
+  { href: "/dashboard", label: "Start", hint: "Dein Überblick", icon: LayoutDashboard },
+  { href: "/calendar", label: "Termine", hint: "Plan & Spiel", icon: CalendarDays },
+  { href: "/teams", label: "Teams", hint: "Deine Kabinen", icon: Users },
+  { href: "/inbox", label: "Inbox", hint: "Offene Aktionen", icon: Bell },
+  { href: "/profile", label: "Profil", hint: "Konto & Status", icon: ShieldCheck }
 ];
 
 type AppNavigationProps = {
-  direction?: "row" | "column";
-  compact?: boolean;
+  variant?: "sidebar" | "mobile";
   onNavigate?: () => void;
 };
 
-export function AppNavigation({ direction = "row", compact = false, onNavigate }: AppNavigationProps) {
+export function AppNavigation({ variant = "sidebar", onNavigate }: AppNavigationProps) {
   const pathname = usePathname();
+  const isMobile = variant === "mobile";
 
   return (
     <nav
       aria-label="App-Navigation"
-      className={cn(
-        compact ? "grid h-full grid-cols-5 gap-0" : "flex gap-1",
-        !compact && (direction === "row" ? "flex-wrap items-center" : "flex-col items-stretch")
-      )}
+      className={cn(isMobile ? "grid h-full grid-cols-5 gap-1" : "flex flex-col gap-1.5")}
     >
       {items.map((item) => {
         const Icon = item.icon;
@@ -41,17 +38,44 @@ export function AppNavigation({ direction = "row", compact = false, onNavigate }
             onClick={onNavigate}
             aria-current={isActive ? "page" : undefined}
             className={cn(
-              "group relative inline-flex items-center gap-2 overflow-hidden rounded-full border px-4 py-2 text-sm font-medium transition-all duration-200",
-              direction === "column" && "justify-between px-5 py-3",
-              compact && "h-full min-w-0 flex-col justify-center gap-0.5 rounded-full px-1 py-1 text-[clamp(0.5rem,2.1vw,0.62rem)] leading-none",
-              isActive && !compact && "border-white/10 bg-white/[0.07] text-foreground shadow-[inset_0_1px_0_rgb(255_255_255/0.06),0_8px_24px_rgb(0_0_0/0.16)]",
-              isActive && compact && "border-transparent bg-primary/[0.12] text-primary shadow-[inset_0_0_0_1px_rgb(243_63_85/0.08)]",
-              !isActive && "border-transparent text-muted-foreground hover:-translate-y-px hover:bg-white/[0.06] hover:text-foreground"
+              "group relative min-w-0 transition-all duration-200",
+              isMobile
+                ? "flex h-full flex-col items-center justify-center gap-1 rounded-xl px-1 py-1.5 text-[0.62rem] font-semibold leading-none"
+                : "flex items-center gap-3 rounded-xl border border-transparent px-3 py-2.5",
+              isActive && !isMobile &&
+                "border-primary/15 bg-[linear-gradient(90deg,hsl(var(--primary)/0.13),hsl(var(--primary)/0.03))] text-foreground shadow-[inset_3px_0_0_hsl(var(--primary))]",
+              isActive && isMobile && "bg-primary/[0.13] text-primary",
+              !isActive && "text-muted-foreground hover:bg-white/[0.05] hover:text-foreground"
             )}
           >
-            <Icon className={cn("h-4 w-4 transition-transform duration-200 group-hover:scale-110", compact && "h-5 w-5")} />
-            {item.label}
-            {isActive && !compact ? <span aria-hidden="true" className="absolute inset-x-4 bottom-0 h-px bg-gradient-to-r from-transparent via-primary to-transparent" /> : null}
+            <span
+              className={cn(
+                "grid shrink-0 place-items-center transition-all duration-200",
+                isMobile ? "h-6 w-6" : "h-9 w-9 rounded-lg bg-white/[0.04] group-hover:bg-white/[0.07]",
+                isActive && !isMobile && "bg-primary/15 text-primary"
+              )}
+            >
+              <Icon className={cn("h-4 w-4", isMobile && "h-5 w-5")} />
+            </span>
+            {isMobile ? (
+              item.label
+            ) : (
+              <>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-semibold">{item.label}</span>
+                  <span className="mt-0.5 block text-[0.68rem] text-muted-foreground">{item.hint}</span>
+                </span>
+                <ChevronRight
+                  className={cn(
+                    "h-4 w-4 -translate-x-1 opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-60",
+                    isActive && "translate-x-0 text-primary opacity-80"
+                  )}
+                />
+              </>
+            )}
+            {isActive && isMobile ? (
+              <span aria-hidden="true" className="absolute inset-x-4 top-0 h-0.5 rounded-full bg-primary" />
+            ) : null}
           </Link>
         );
       })}
