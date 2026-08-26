@@ -18,7 +18,7 @@ type NewEventPageProps = {
 
 export default async function NewEventPage({ params }: NewEventPageProps) {
   const { teamId } = await params;
-  const { supabase, membership } = await requireTeamManager(teamId, `/teams/${teamId}/events/new`);
+  const { supabase } = await requireTeamManager(teamId, `/teams/${teamId}/events/new`);
   const team = await getTeamById(supabase, teamId);
 
   if (!team) {
@@ -30,9 +30,9 @@ export default async function NewEventPage({ params }: NewEventPageProps) {
       <Card className="p-8">
         <p className="section-kicker">Neuer Termin</p>
         <h1 className="mt-2 text-4xl font-semibold">{team.name}</h1>
-        <p className="mt-3 text-muted-foreground">Erstelle Training, Spiel, Besprechung oder Event für dein Team.</p>
+        <p className="mt-3 text-muted-foreground">Plane ein Training oder einen anderen Teamtermin.</p>
         <div className="mt-6">
-          <TeamTabs teamId={team.id} showAdmin={membership.role === "owner"} />
+          <TeamTabs teamId={team.id} />
         </div>
       </Card>
 
@@ -50,8 +50,6 @@ export default async function NewEventPage({ params }: NewEventPageProps) {
             <Input name="starts_at" type="datetime-local" required />
             <Input name="ends_at" type="datetime-local" required />
             <Input name="location" placeholder="Ort" />
-            <Input name="response_deadline" type="datetime-local" aria-label="Antwortfrist" />
-            <Input name="max_participants" type="number" min="1" max="500" placeholder="Maximale Teilnehmende" />
             <label className="grid gap-2 text-sm font-semibold">
               Wöchentliche Wiederholungen
               <Input name="recurrence_count" type="number" min="1" max="52" defaultValue="1" />

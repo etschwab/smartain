@@ -1,238 +1,108 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { BarChart3, CalendarClock, ClipboardList, MessageCircle, ShieldCheck, Users } from "lucide-react";
+import { CalendarPlus, UserPlus, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Select } from "@/components/ui/select";
-import { StatsCard } from "@/components/stats-card";
-import { InviteCard } from "@/components/team/invite-card";
 import { TeamTabs } from "@/components/team/team-tabs";
-import { createInviteAction, regenerateInviteAction, toggleInviteAction } from "@/lib/actions";
-import { createAdminClient } from "@/lib/supabase-admin";
-import { managerRoles, teamRoleOptions } from "@/lib/constants";
-import { getTeamById, listTeamEvents, listTeamInvites, listTeamMembersDetailed, listTeamTasks } from "@/lib/data";
-import { getRequestOrigin } from "@/lib/request";
+import { managerRoles } from "@/lib/constants";
+import { getTeamById, listTeamEvents, listTeamMembersDetailed } from "@/lib/data";
 import { requireTeamAccess } from "@/lib/supabase-server";
-import {
-  buildJoinPath,
-  formatDateTimeLabel,
-  getEventTypeLabel,
-  getRoleLabel,
-  getTaskStatusLabel,
-  getTeamAccentColor
-} from "@/lib/utils";
+import { formatDateTimeLabel, getEventTypeLabel, getRoleLabel, isFutureDate } from "@/lib/utils";
 
-type TeamPageProps = {
-  params: Promise<{
-    teamId: string;
-  }>;
-};
+type TeamPageProps = { params: Promise<{ teamId: string }> };
 
 export default async function TeamOverviewPage({ params }: TeamPageProps) {
   const { teamId } = await params;
   const { supabase, membership } = await requireTeamAccess(teamId, `/teams/${teamId}`);
-  const readSupabase = createAdminClient() ?? supabase;
-  const [team, members, events, tasks, invites, origin] = await Promise.all([
-    getTeamById(readSupabase, teamId),
-    listTeamMembersDetailed(readSupabase, teamId),
-    listTeamEvents(readSupabase, teamId),
-    listTeamTasks(readSupabase, teamId),
-    listTeamInvites(readSupabase, teamId),
-    getRequestOrigin()
+  const [team, members, events] = await Promise.all([
+    getTeamById(supabase, teamId),
+    listTeamMembersDetailed(supabase, teamId),
+    listTeamEvents(supabase, teamId)
   ]);
 
-  if (!team) {
-    notFound();
-  }
+  if (!team) notFound();
 
   const canManage = managerRoles.includes(membership.role);
-  const isOwner = membership.role === "owner";
-  const activeInvite = invites.find((invite) => invite.is_active) ?? invites[0] ?? null;
-  const upcomingEvents = events.slice(0, 4);
-  const openTasks = tasks.filter((task) => task.status === "open").slice(0, 4);
-  const teamAccent = getTeamAccentColor(team.theme_color);
+  const upcomingEvents = events.filter((event) => isFutureDate(event.starts_at)).slice(0, 5);
 
   return (
-    <div className="page-stack">
-      <Card className="overflow-hidden p-8">
+    <div className="space-y-8">
+      <Card className="p-6 sm:p-8">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <span className="h-4 w-4 rounded-full" style={{ backgroundColor: teamAccent }} />
-              <p className="section-kicker">{team.sport}</p>
-            </div>
-            <div>
-              <h1 className="text-4xl font-semibold">{team.name}</h1>
-              <p className="mt-3 text-muted-foreground">
-                Saison {team.season} · Deine Rolle: {getRoleLabel(membership.role)}
-              </p>
-            </div>
-            <TeamTabs teamId={team.id} showAdmin={isOwner} />
+          <div>
+            <p className="section-kicker">{team.sport}</p>
+            <h1 className="mt-2 text-3xl font-semibold sm:text-4xl">{team.name}</h1>
+            <p className="mt-3 text-muted-foreground">{team.season} · {getRoleLabel(membership.role)}</p>
           </div>
-          <div className="flex flex-wrap gap-3">
-            <Button asChild variant="secondary">
-              <Link href={`/teams/${team.id}/organize`}>
-                <MessageCircle className="h-4 w-4" />
-                Teamzentrale
-              </Link>
-            </Button>
-            <Button asChild variant="secondary">
-              <Link href={`/teams/${team.id}/stats`}>
-                <BarChart3 className="h-4 w-4" />
-                Statistik
-              </Link>
-            </Button>
-            {canManage ? (
-              <>
-                <Button asChild>
-                  <Link href={`/teams/${team.id}/events/new`}>Training erstellen</Link>
-                </Button>
-                {isOwner ? (
-                  <Button asChild variant="secondary">
-                    <Link href={`/teams/${team.id}/admin`}>
-                      <ShieldCheck className="h-4 w-4" />
-                      Admin-Bereich
-                    </Link>
-                  </Button>
-                ) : null}
-              </>
-            ) : null}
-          </div>
+          {canManage ? (
+            <div className="flex flex-wrap gap-3">
+              <Button asChild>
+                <Link href={`/teams/${team.id}/events/new`}>
+                  <CalendarPlus className="h-4 w-4" />
+                  Training oder Event erstellen
+                </Link>
+              </Button>
+              <Button asChild variant="secondary">
+                <Link href={`/teams/${team.id}/members`}>
+                  <UserPlus className="h-4 w-4" />
+                  Mitglieder einladen
+                </Link>
+              </Button>
+            </div>
+          ) : null}
         </div>
+        <div className="mt-6"><TeamTabs teamId={team.id} /></div>
       </Card>
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <StatsCard title="Mitglieder" value={String(members.length)} description="aktive Personen im Team" icon={<Users className="h-5 w-5" />} />
-        <StatsCard title="Nächste Termine" value={String(upcomingEvents.length)} description="anstehende Teamtermine" icon={<CalendarClock className="h-5 w-5" />} />
-        <StatsCard title="Offene Aufgaben" value={String(openTasks.length)} description="aktueller Orga-Status" icon={<ClipboardList className="h-5 w-5" />} />
-        <StatsCard title="Einladungen" value={String(invites.length)} description="aktive und frühere Join-Links" icon={<ShieldCheck className="h-5 w-5" />} />
-      </section>
-
-      <section className="grid gap-6 xl:grid-cols-[1.1fr,0.9fr]">
-        {activeInvite && canManage ? (
-          <InviteCard
-            invite={activeInvite}
-            absoluteUrl={`${origin}${buildJoinPath(activeInvite.code)}`}
-            regenerateAction={regenerateInviteAction.bind(null, team.id, activeInvite.id)}
-            toggleAction={toggleInviteAction.bind(null, team.id, activeInvite.id, !activeInvite.is_active)}
-          />
-        ) : (
-          <Card className="p-6">
-            <p className="section-kicker">Einladungen</p>
-            <h2 className="mt-2 text-2xl font-semibold">Mitglieder ins Team holen</h2>
-            <p className="mt-3 text-muted-foreground">
-              {canManage
-                ? "Erstelle einen Join-Link für Spieler, Eltern oder Coaches und teile ihn direkt mit dem Team."
-                : "Owner und Coaches können Einladungslinks verwalten."}
-            </p>
-            {canManage ? (
-              <form action={createInviteAction.bind(null, team.id)} className="mt-6 grid gap-3 sm:grid-cols-[1fr,auto] sm:items-end">
-                <Select name="role" defaultValue="player" aria-label="Rolle für Einladung">
-                  {teamRoleOptions
-                    .filter((role) => role.value !== "owner")
-                    .map((role) => (
-                      <option key={role.value} value={role.value}>
-                        {role.label}
-                      </option>
-                    ))}
-                </Select>
-                <Button type="submit">Einladungslink erstellen</Button>
-                <Button asChild variant="secondary">
-                  <Link href={`/teams/${team.id}/admin`}>Mitglieder verwalten</Link>
-                </Button>
-              </form>
-            ) : null}
-          </Card>
-        )}
-
+      <section className="grid gap-6 xl:grid-cols-[1.15fr,0.85fr]">
         <Card className="p-6">
-          <p className="section-kicker">Team-Feed</p>
-          <h2 className="mt-2 text-2xl font-semibold">Nächste Termine</h2>
-          <div className="mt-5 space-y-3">
-            {upcomingEvents.length > 0 ? (
-              upcomingEvents.map((event) => (
-                <Link
-                  key={event.id}
-                  href={`/teams/${team.id}/events/${event.id}`}
-                  className="block rounded-none border border-border bg-background/70 p-4"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="font-semibold">{event.title}</p>
-                    <Badge>{getEventTypeLabel(event.type)}</Badge>
-                  </div>
-                  <p className="mt-2 text-sm text-muted-foreground">{formatDateTimeLabel(event.starts_at)}</p>
-                </Link>
-              ))
-            ) : (
-              <p className="text-sm text-muted-foreground">Noch keine Termine im Teamkalender.</p>
-            )}
-          </div>
-        </Card>
-      </section>
-
-      <section className="grid gap-6 xl:grid-cols-2">
-        <Card className="p-6">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="section-kicker">Mitglieder</p>
-              <h2 className="mt-2 text-2xl font-semibold">Teamliste</h2>
+              <p className="section-kicker">Trainings & Events</p>
+              <h2 className="mt-2 text-2xl font-semibold">Nächste Termine</h2>
             </div>
-            <Button asChild variant="secondary" size="sm">
-              <Link href={`/teams/${team.id}/members`}>Alle ansehen</Link>
-            </Button>
+            <Button asChild variant="secondary" size="sm"><Link href={`/teams/${team.id}/events`}>Alle Termine</Link></Button>
           </div>
           <div className="mt-5 space-y-3">
-            {members.slice(0, 5).map((member) => (
-              <div key={member.id} className="rounded-none border border-border bg-background/70 p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="font-semibold">{member.profile?.full_name ?? member.profile?.email ?? "Unbekannt"}</p>
-                    <p className="text-sm text-muted-foreground">{member.profile?.email ?? "Keine E-Mail"}</p>
-                  </div>
-                  <Badge variant="outline">{getRoleLabel(member.role)}</Badge>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-
-        <Card className="p-6">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="section-kicker">Aufgaben</p>
-              <h2 className="mt-2 text-2xl font-semibold">Offene Checkliste</h2>
-            </div>
-            <Button asChild variant="secondary" size="sm">
-              <Link href={`/teams/${team.id}/tasks`}>Zur Aufgabenliste</Link>
-            </Button>
-          </div>
-          <div className="mt-5 space-y-3">
-            {openTasks.length > 0 ? (
-              openTasks.map((task) => (
-                <div key={task.id} className="rounded-none border border-border bg-background/70 p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="font-semibold">{task.title}</p>
-                    <Badge variant="muted">{getTaskStatusLabel(task.status)}</Badge>
-                  </div>
-                  <p className="mt-2 text-sm text-muted-foreground">{task.description ?? "Keine Zusatzinfos"}</p>
-                </div>
-              ))
-            ) : (
+            {upcomingEvents.length > 0 ? upcomingEvents.map((event) => (
+              <Link key={event.id} href={`/teams/${team.id}/events/${event.id}`} className="flex items-center justify-between gap-4 rounded-xl border border-border bg-background/70 p-4 hover:bg-muted/50">
+                <span>
+                  <span className="block font-semibold">{event.title}</span>
+                  <span className="mt-1 block text-sm text-muted-foreground">{formatDateTimeLabel(event.starts_at)}</span>
+                </span>
+                <Badge>{getEventTypeLabel(event.type)}</Badge>
+              </Link>
+            )) : (
               <EmptyState
-                title="Noch keine Aufgaben"
-                description="Lege die ersten Checklisten für Material, Fahrgemeinschaft oder Kabinen an."
-                action={
-                  canManage ? (
-                    <Button asChild size="sm">
-                      <Link href={`/teams/${team.id}/tasks`}>Aufgabe anlegen</Link>
-                    </Button>
-                  ) : undefined
-                }
+                title="Noch keine Termine"
+                description="Plane das erste Training oder Event für dieses Team."
+                action={canManage ? <Button asChild size="sm"><Link href={`/teams/${team.id}/events/new`}>Termin erstellen</Link></Button> : undefined}
               />
             )}
           </div>
+        </Card>
+
+        <Card className="p-6">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="section-kicker">Mitglieder</p>
+              <h2 className="mt-2 text-2xl font-semibold">{members.length} im Team</h2>
+            </div>
+            <Users className="h-5 w-5 text-muted-foreground" />
+          </div>
+          <div className="mt-5 space-y-3">
+            {members.slice(0, 5).map((member) => (
+              <div key={member.id} className="flex items-center justify-between gap-3 border-b border-border py-3 last:border-0">
+                <span className="min-w-0">
+                  <span className="block truncate font-semibold">{member.profile?.full_name ?? member.profile?.email ?? "Unbekannt"}</span>
+                  <span className="block text-sm text-muted-foreground">{getRoleLabel(member.role)}</span>
+                </span>
+              </div>
+            ))}
+          </div>
+          <Button asChild variant="secondary" className="mt-5 w-full"><Link href={`/teams/${team.id}/members`}>Mitglieder verwalten</Link></Button>
         </Card>
       </section>
     </div>

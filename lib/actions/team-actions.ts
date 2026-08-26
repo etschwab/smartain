@@ -327,42 +327,8 @@ export async function createTeamAction(formData: FormData) {
   redirect(`/teams/${team.id}?toast=team-created`);
 }
 
-export async function updateTeamSettingsAction(teamId: string, formData: FormData) {
-  const { supabase } = await requireTeamOwner(teamId, `/teams/${teamId}/admin`);
-
-  const payload = {
-    name: getString(formData, "name"),
-    sport: getString(formData, "sport"),
-    season: getString(formData, "season"),
-    theme_color: getString(formData, "theme_color") || "#dc2626",
-    logo_url: getNullableString(formData, "logo_url")
-  };
-
-  if (!payload.name || !payload.sport || !payload.season) {
-    throw new Error("Bitte fülle Name, Sportart und Saison aus.");
-  }
-
-  let updateResult = await supabase.from("teams").update(payload).eq("id", teamId);
-
-  if (isRecoverableSetupError(updateResult.error)) {
-    updateResult = await supabase
-      .from("teams")
-      .update({
-        name: payload.name,
-        age_group: payload.season
-      })
-      .eq("id", teamId);
-  }
-
-  if (updateResult.error) {
-    throw new Error(getUserFacingSupabaseError(updateResult.error, "Die Teamdaten konnten nicht gespeichert werden."));
-  }
-
-  redirect(`/teams/${teamId}/admin?toast=team-updated`);
-}
-
 export async function createInviteAction(teamId: string, formData: FormData) {
-  const { supabase, user } = await requireTeamManager(teamId, `/teams/${teamId}`);
+  const { supabase, user } = await requireTeamManager(teamId, `/teams/${teamId}/members`);
   try {
     await createTeamInviteInternal(
       supabase,
@@ -373,14 +339,14 @@ export async function createInviteAction(teamId: string, formData: FormData) {
     );
   } catch (error) {
     console.error("Invite creation failed.", error);
-    redirect(`/teams/${teamId}?toast=invite-create-failed`);
+    redirect(`/teams/${teamId}/members?toast=invite-create-failed`);
   }
 
-  redirect(`/teams/${teamId}?toast=invite-created`);
+  redirect(`/teams/${teamId}/members?toast=invite-created`);
 }
 
 export async function regenerateInviteAction(teamId: string, inviteId: string) {
-  const { supabase, user } = await requireTeamManager(teamId, `/teams/${teamId}`);
+  const { supabase, user } = await requireTeamManager(teamId, `/teams/${teamId}/members`);
   const writeClient = createAdminClient() ?? supabase;
   const { data: invite, error } = await writeClient.from("team_invites").select("*").eq("id", inviteId).single();
 
@@ -396,11 +362,11 @@ export async function regenerateInviteAction(teamId: string, inviteId: string) {
 
   await createTeamInviteInternal(supabase, teamId, user.id, invite.role, invite.expires_at);
 
-  redirect(`/teams/${teamId}?toast=invite-regenerated`);
+  redirect(`/teams/${teamId}/members?toast=invite-regenerated`);
 }
 
 export async function toggleInviteAction(teamId: string, inviteId: string, nextActive: boolean) {
-  const { supabase } = await requireTeamManager(teamId, `/teams/${teamId}`);
+  const { supabase } = await requireTeamManager(teamId, `/teams/${teamId}/members`);
   const writeClient = createAdminClient() ?? supabase;
   const { error } = await writeClient.from("team_invites").update({ is_active: nextActive }).eq("id", inviteId);
 
@@ -408,11 +374,11 @@ export async function toggleInviteAction(teamId: string, inviteId: string, nextA
     throw new Error(getUserFacingSupabaseError(error, "Der Einladungslink konnte nicht geändert werden."));
   }
 
-  redirect(`/teams/${teamId}?toast=invite-updated`);
+  redirect(`/teams/${teamId}/members?toast=invite-updated`);
 }
 
 export async function joinTeamAction(inviteCode: string) {
-  const { supabase, user, profile } = await requireProfile(`/join/${inviteCode}`);
+  const { supabase, user } = await requireProfile(`/join/${inviteCode}`);
   const adminSupabase = createAdminClient();
   let teamId: string;
 
@@ -488,36 +454,11 @@ export async function joinTeamAction(inviteCode: string) {
     }
   }
 
-  const managersResult = await supabase
-    .from("team_members")
-    .select("user_id, role")
-    .eq("team_id", teamId)
-    .eq("status", "active");
-
-  if (!managersResult.error) {
-    const managerIds = ((managersResult.data as Array<{ user_id: string; role: string }> | null) ?? [])
-      .filter((member) => member.user_id !== user.id && managerRoles.includes(member.role as (typeof managerRoles)[number]))
-      .map((member) => member.user_id);
-
-    if (managerIds.length > 0) {
-      await supabase.from("notifications").insert(
-        managerIds.map((managerId) => ({
-          user_id: managerId,
-          team_id: teamId,
-          type: "member_joined",
-          title: "Neues Teammitglied",
-          body: `${profile.full_name ?? profile.email ?? "Ein Mitglied"} ist dem Team beigetreten.`,
-          action_path: `/teams/${teamId}/members`
-        }))
-      );
-    }
-  }
-
   redirect(`/teams/${teamId}?toast=joined-team`);
 }
 
 export async function updateMemberRoleAction(teamId: string, memberId: string, formData: FormData) {
-  const { supabase } = await requireTeamOwner(teamId, `/teams/${teamId}/admin`);
+  const { supabase } = await requireTeamOwner(teamId, `/teams/${teamId}/members`);
   const role = getString(formData, "role");
 
   if (!role) {
@@ -538,11 +479,11 @@ export async function updateMemberRoleAction(teamId: string, memberId: string, f
     throw new Error(getUserFacingSupabaseError(error, "Die Rolle konnte nicht gespeichert werden."));
   }
 
-  redirect(`/teams/${teamId}/admin?toast=member-updated`);
+  redirect(`/teams/${teamId}/members?toast=member-updated`);
 }
 
 export async function removeMemberAction(teamId: string, memberId: string) {
-  const { supabase } = await requireTeamOwner(teamId, `/teams/${teamId}/admin`);
+  const { supabase } = await requireTeamOwner(teamId, `/teams/${teamId}/members`);
   await assertNotLastOwner(supabase, teamId, memberId);
 
   const { error } = await supabase.from("team_members").delete().eq("id", memberId);
@@ -551,5 +492,5 @@ export async function removeMemberAction(teamId: string, memberId: string) {
     throw new Error(getUserFacingSupabaseError(error, "Das Mitglied konnte nicht entfernt werden."));
   }
 
-  redirect(`/teams/${teamId}/admin?toast=member-removed`);
+  redirect(`/teams/${teamId}/members?toast=member-removed`);
 }

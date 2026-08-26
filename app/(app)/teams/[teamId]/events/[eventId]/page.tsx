@@ -1,309 +1,77 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ThumbsDown, ThumbsUp } from "lucide-react";
+import { CalendarClock, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { ConfirmSubmit } from "@/components/confirm-submit";
+import { SubmitButton } from "@/components/forms/submit-button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { ConfirmSubmit } from "@/components/confirm-submit";
-import { SubmitButton } from "@/components/forms/submit-button";
 import { TeamTabs } from "@/components/team/team-tabs";
+import { deleteEventAction, toggleEventCancellationAction, updateEventAction } from "@/lib/actions";
 import { eventTypeOptions, managerRoles } from "@/lib/constants";
-import { getEventById, getEventResponseCounts, getTeamById, listEventResponses, listTeamMembersDetailed } from "@/lib/data";
-import { deleteEventAction, removeLineupEntryAction, respondToEventAction, setLineupEntryAction, toggleEventCancellationAction, updateEventAction, updateGameReportAction } from "@/lib/actions";
-import { listEventLineup, profileName } from "@/lib/organization-data";
+import { getEventById, getTeamById } from "@/lib/data";
 import { requireTeamAccess } from "@/lib/supabase-server";
-import { formatDateTimeLabel, getEventTypeLabel, getResponseStatusLabel, toDateTimeLocalValue } from "@/lib/utils";
+import { formatDateTimeLabel, getEventTypeLabel, toDateTimeLocalValue } from "@/lib/utils";
 
-type EventDetailPageProps = {
-  params: Promise<{
-    teamId: string;
-    eventId: string;
-  }>;
-};
+type EventDetailPageProps = { params: Promise<{ teamId: string; eventId: string }> };
 
 export default async function EventDetailPage({ params }: EventDetailPageProps) {
   const { teamId, eventId } = await params;
-  const { supabase, membership, user } = await requireTeamAccess(teamId, `/teams/${teamId}/events/${eventId}`);
-  const [team, event, members, responses, counts, lineup] = await Promise.all([
-    getTeamById(supabase, teamId),
-    getEventById(supabase, eventId),
-    listTeamMembersDetailed(supabase, teamId),
-    listEventResponses(supabase, eventId),
-    getEventResponseCounts(supabase, eventId, teamId),
-    listEventLineup(supabase, eventId)
-  ]);
+  const { supabase, membership } = await requireTeamAccess(teamId, `/teams/${teamId}/events/${eventId}`);
+  const [team, event] = await Promise.all([getTeamById(supabase, teamId), getEventById(supabase, eventId)]);
 
-  if (!team || !event || event.team_id !== team.id) {
-    notFound();
-  }
+  if (!team || !event || event.team_id !== team.id) notFound();
 
-  const currentResponse = responses.find((response) => response.user_id === user.id) ?? null;
-  const missingMembers = members.filter(
-    (member) => member.status === "active" && !responses.some((response) => response.user_id === member.user_id)
-  );
   const canManage = managerRoles.includes(membership.role);
-  const isOwner = membership.role === "owner";
 
   return (
-    <div className="page-stack">
-      <Card className="p-8">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+    <div className="space-y-8">
+      <Card className="p-6 sm:p-8">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <p className="section-kicker">{team.name}</p>
-            <h1 className="mt-2 text-4xl font-semibold">{event.title}</h1>
-            <p className="mt-3 text-muted-foreground">{formatDateTimeLabel(event.starts_at)} · {event.location ?? "Ort folgt"}</p>
-            <div className="mt-4 flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Badge>{getEventTypeLabel(event.type)}</Badge>
               {event.is_cancelled ? <Badge variant="danger">Abgesagt</Badge> : null}
-              {event.max_participants ? <Badge variant="outline">Max. {event.max_participants} Teilnehmende</Badge> : null}
-              {currentResponse ? (
-                <Badge variant="success">Deine Antwort: {getResponseStatusLabel(currentResponse.status)}</Badge>
-              ) : (
-                <Badge variant="muted">Du hast noch nicht geantwortet</Badge>
-              )}
+            </div>
+            <h1 className="mt-4 text-3xl font-semibold sm:text-4xl">{event.title}</h1>
+            <div className="mt-4 space-y-2 text-sm text-muted-foreground">
+              <p className="flex items-center gap-2"><CalendarClock className="h-4 w-4" />{formatDateTimeLabel(event.starts_at)}</p>
+              <p className="flex items-center gap-2"><MapPin className="h-4 w-4" />{event.location ?? "Ort noch offen"}</p>
             </div>
           </div>
-          <div className="max-w-md text-sm text-muted-foreground">{event.description ?? "Keine Zusatzbeschreibung hinterlegt."}</div>
+          <p className="max-w-lg text-sm leading-6 text-muted-foreground">{event.description ?? "Keine Beschreibung hinterlegt."}</p>
         </div>
-        <div className="mt-6">
-          <TeamTabs teamId={team.id} showAdmin={isOwner} />
-        </div>
+        <div className="mt-6"><TeamTabs teamId={team.id} /></div>
       </Card>
 
-      <section className="grid gap-6 xl:grid-cols-[0.9fr,1.1fr]">
-        <Card className="p-6">
-          <p className="section-kicker">Deine Rückmeldung</p>
-          <h2 className="mt-2 text-2xl font-semibold">Antwort absenden</h2>
-          {event.response_deadline ? <p className="mt-2 text-sm text-muted-foreground">Antwortfrist: {formatDateTimeLabel(event.response_deadline)}</p> : null}
-          <form action={respondToEventAction.bind(null, team.id, event.id)} className="mt-5 space-y-4">
-            <input type="hidden" name="return_path" value={`/teams/${team.id}/events/${event.id}`} />
-            <Textarea name="comment" placeholder="Optionaler Kommentar" defaultValue={currentResponse?.comment ?? ""} />
-            <div className="grid grid-cols-2 gap-3">
-              <SubmitButton
-                name="status"
-                value="yes"
-                pendingLabel="Speichert..."
-                disabled={event.is_cancelled}
-                variant={currentResponse?.status === "yes" ? "primary" : "secondary"}
-                aria-pressed={currentResponse?.status === "yes"}
-              >
-                <ThumbsUp className="h-4 w-4" />
-                Dabei
-              </SubmitButton>
-              <SubmitButton
-                name="status"
-                value="no"
-                pendingLabel="Speichert..."
-                disabled={event.is_cancelled}
-                variant={currentResponse?.status === "no" ? "danger" : "secondary"}
-                aria-pressed={currentResponse?.status === "no"}
-              >
-                <ThumbsDown className="h-4 w-4" />
-                Nicht dabei
-              </SubmitButton>
-            </div>
-          </form>
-        </Card>
-
-        <Card className="p-6">
-          <p className="section-kicker">Antwortstatus</p>
-          <h2 className="mt-2 text-2xl font-semibold">Teamüberblick</h2>
-          <div className="mt-5 grid gap-4 sm:grid-cols-4">
-            <div className="rounded-none border border-border bg-background/70 p-4">
-              <p className="text-sm text-muted-foreground">Zugesagt</p>
-              <p className="mt-2 text-3xl font-semibold">{counts.yes}</p>
-            </div>
-            <div className="rounded-none border border-border bg-background/70 p-4">
-              <p className="text-sm text-muted-foreground">Absagen</p>
-              <p className="mt-2 text-3xl font-semibold">{counts.no}</p>
-            </div>
-            <div className="rounded-none border border-border bg-background/70 p-4">
-              <p className="text-sm text-muted-foreground">Vielleicht</p>
-              <p className="mt-2 text-3xl font-semibold">{counts.maybe}</p>
-            </div>
-            <div className="rounded-none border border-border bg-background/70 p-4">
-              <p className="text-sm text-muted-foreground">Offen</p>
-              <p className="mt-2 text-3xl font-semibold">{counts.pending}</p>
-            </div>
-          </div>
-        </Card>
-      </section>
-
       {canManage ? (
-        <Card className="p-6">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div>
-              <p className="section-kicker">Termin verwalten</p>
-              <h2 className="mt-2 text-2xl font-semibold">Details bearbeiten</h2>
-              <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-                Passe Zeit, Ort und Beschreibung an oder entferne den Termin, wenn er nicht mehr benötigt wird.
-              </p>
-            </div>
-            <form action={deleteEventAction.bind(null, team.id, event.id)}>
-              <ConfirmSubmit
-                type="submit"
-                variant="ghost"
-                confirmMessage="Termin wirklich löschen?"
-              >
-                Termin löschen
-              </ConfirmSubmit>
-            </form>
-            <form action={toggleEventCancellationAction.bind(null, team.id, event.id, !event.is_cancelled)}>
-              <SubmitButton variant="secondary" pendingLabel="Wird aktualisiert...">
-                {event.is_cancelled ? "Termin reaktivieren" : "Termin absagen"}
-              </SubmitButton>
-            </form>
+        <Card className="p-6 sm:p-8">
+          <div>
+            <p className="section-kicker">Termin bearbeiten</p>
+            <h2 className="mt-2 text-2xl font-semibold">Details</h2>
           </div>
           <form action={updateEventAction.bind(null, team.id, event.id)} className="mt-6 grid gap-5">
             <div className="grid gap-5 sm:grid-cols-2">
-              <Input name="title" defaultValue={event.title} required />
-              <Select name="type" defaultValue={event.type}>
-                {eventTypeOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </Select>
-              <Input name="starts_at" type="datetime-local" defaultValue={toDateTimeLocalValue(event.starts_at)} required />
-              <Input name="ends_at" type="datetime-local" defaultValue={toDateTimeLocalValue(event.ends_at)} required />
-              <Input name="response_deadline" type="datetime-local" defaultValue={toDateTimeLocalValue(event.response_deadline)} aria-label="Antwortfrist" />
-              <Input name="max_participants" type="number" min="1" max="500" defaultValue={event.max_participants ?? ""} placeholder="Maximale Teilnehmende" />
-              <Input name="location" defaultValue={event.location ?? ""} placeholder="Ort" />
+              <label className="grid gap-2 text-sm font-semibold">Titel<Input name="title" defaultValue={event.title} required /></label>
+              <label className="grid gap-2 text-sm font-semibold">Art<Select name="type" defaultValue={event.type}>{eventTypeOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</Select></label>
+              <label className="grid gap-2 text-sm font-semibold">Beginn<Input name="starts_at" type="datetime-local" defaultValue={toDateTimeLocalValue(event.starts_at)} required /></label>
+              <label className="grid gap-2 text-sm font-semibold">Ende<Input name="ends_at" type="datetime-local" defaultValue={toDateTimeLocalValue(event.ends_at)} required /></label>
+              <label className="grid gap-2 text-sm font-semibold sm:col-span-2">Ort<Input name="location" defaultValue={event.location ?? ""} placeholder="Trainingsplatz, Halle oder Treffpunkt" /></label>
             </div>
-            <Textarea name="description" defaultValue={event.description ?? ""} placeholder="Beschreibung, Treffpunkt oder Zusatzinfos" />
-            <div className="flex flex-wrap justify-end gap-3">
-              <Button asChild variant="secondary">
-                <Link href={`/teams/${team.id}/events`}>Zur Übersicht</Link>
-              </Button>
-              <SubmitButton pendingLabel="Termin wird gespeichert...">Termin speichern</SubmitButton>
+            <label className="grid gap-2 text-sm font-semibold">Beschreibung<Textarea name="description" defaultValue={event.description ?? ""} /></label>
+            <div className="flex flex-col-reverse gap-3 border-t border-border pt-5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-wrap gap-2">
+                <ConfirmSubmit formAction={deleteEventAction.bind(null, team.id, event.id)} variant="ghost" confirmMessage="Termin wirklich löschen?">Löschen</ConfirmSubmit>
+                <SubmitButton formAction={toggleEventCancellationAction.bind(null, team.id, event.id, !event.is_cancelled)} variant="secondary" pendingLabel="Wird aktualisiert...">
+                  {event.is_cancelled ? "Reaktivieren" : "Absagen"}
+                </SubmitButton>
+              </div>
+              <SubmitButton pendingLabel="Wird gespeichert...">Änderungen speichern</SubmitButton>
             </div>
           </form>
         </Card>
       ) : null}
-
-      {event.type === "game" ? (
-        <section id="game-report" className="scroll-mt-28 grid gap-6 xl:grid-cols-[0.8fr,1.2fr]">
-          {canManage ? (
-            <Card className="p-6">
-              <p className="section-kicker">Spielbericht</p>
-              <h2 className="mt-2 text-2xl font-semibold">Ergebnis erfassen</h2>
-              <form action={updateGameReportAction.bind(null, team.id, event.id)} className="mt-5 grid gap-4">
-                <Input name="opponent" defaultValue={event.opponent ?? ""} placeholder="Gegner" />
-                <div className="grid grid-cols-2 gap-4">
-                  <Input name="score_for" type="number" min="0" defaultValue={event.score_for ?? ""} placeholder="Eigene Punkte" aria-label="Eigene Punkte" />
-                  <Input name="score_against" type="number" min="0" defaultValue={event.score_against ?? ""} placeholder="Gegnerische Punkte" aria-label="Gegnerische Punkte" />
-                </div>
-                <Textarea name="report_summary" defaultValue={event.report_summary ?? ""} placeholder="Spielverlauf, Highlights und Learnings" />
-                <SubmitButton pendingLabel="Wird gespeichert...">Spielbericht speichern</SubmitButton>
-              </form>
-            </Card>
-          ) : null}
-          <Card className="p-6">
-            <p className="section-kicker">Resultat</p>
-            <h2 className="mt-2 text-2xl font-semibold">{event.opponent ? `${team.name} vs. ${event.opponent}` : "Spielauswertung"}</h2>
-            {event.score_for !== null && event.score_for !== undefined && event.score_against !== null && event.score_against !== undefined ? (
-              <p className="mt-6 font-display text-7xl leading-none text-primary">{event.score_for}:{event.score_against}</p>
-            ) : <p className="mt-5 text-sm text-muted-foreground">Noch kein Ergebnis eingetragen.</p>}
-            <p className="mt-6 whitespace-pre-wrap leading-7 text-muted-foreground">{event.report_summary ?? "Der Spielbericht folgt nach dem Spiel."}</p>
-          </Card>
-        </section>
-      ) : null}
-
-      <section id="lineup" className="scroll-mt-28 grid gap-6 xl:grid-cols-[0.8fr,1.2fr]">
-        {canManage ? (
-          <Card className="p-6">
-            <p className="section-kicker">Aufstellung</p>
-            <h2 className="mt-2 text-2xl font-semibold">Kader festlegen</h2>
-            <p className="mt-2 text-sm text-muted-foreground">Füge Spieler zur Startformation oder Bank hinzu. Erneutes Speichern aktualisiert den Eintrag.</p>
-            <form action={setLineupEntryAction.bind(null, team.id, event.id)} className="mt-5 grid gap-4">
-              <Select name="user_id" required defaultValue="">
-                <option value="" disabled>Teammitglied wählen</option>
-                {members.filter((member) => member.status === "active").map((member) => (
-                  <option key={member.id} value={member.user_id}>{profileName(member.profile)}</option>
-                ))}
-              </Select>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Input name="position_label" placeholder="Position, z. B. Linker Flügel" />
-                <Select name="squad" defaultValue="starter"><option value="starter">Startformation</option><option value="bench">Bank</option></Select>
-              </div>
-              <Input name="note" placeholder="Optionale taktische Notiz" />
-              <SubmitButton pendingLabel="Wird gespeichert...">Zur Aufstellung hinzufügen</SubmitButton>
-            </form>
-          </Card>
-        ) : null}
-        <Card className="p-6">
-          <p className="section-kicker">Kader</p>
-          <h2 className="mt-2 text-2xl font-semibold">Startformation & Bank</h2>
-          <div className="mt-5 space-y-3">
-            {lineup.length ? lineup.map((entry) => (
-              <div key={entry.id} className="flex flex-col gap-3 border border-border bg-background/70 p-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <div className="flex flex-wrap items-center gap-2"><p className="font-semibold">{profileName(entry.profile)}</p><Badge variant={entry.is_starter ? "success" : "muted"}>{entry.is_starter ? "Start" : "Bank"}</Badge></div>
-                  <p className="mt-1 text-sm text-muted-foreground">{entry.position_label ?? "Position offen"}{entry.note ? ` · ${entry.note}` : ""}</p>
-                </div>
-                {canManage ? <form action={removeLineupEntryAction.bind(null, team.id, event.id, entry.id)}><ConfirmSubmit variant="ghost" confirmMessage="Aus der Aufstellung entfernen?">Entfernen</ConfirmSubmit></form> : null}
-              </div>
-            )) : <p className="text-sm text-muted-foreground">Noch keine Aufstellung gespeichert.</p>}
-          </div>
-        </Card>
-      </section>
-
-      <section className="grid gap-6 xl:grid-cols-2">
-        <Card className="p-6">
-          <p className="section-kicker">Wer fehlt noch?</p>
-          <h2 className="mt-2 text-2xl font-semibold">Offene Rückmeldungen</h2>
-          <div className="mt-5 space-y-3">
-            {missingMembers.length > 0 ? (
-              missingMembers.map((member) => (
-                <div key={member.id} className="rounded-none border border-border bg-background/70 p-4">
-                  <p className="font-semibold">{member.profile?.full_name ?? member.profile?.email ?? "Unbekannt"}</p>
-                  <p className="text-sm text-muted-foreground">{member.profile?.email ?? "Keine E-Mail"}</p>
-                </div>
-              ))
-            ) : (
-              <p className="text-sm text-muted-foreground">Alle aktiven Mitglieder haben bereits reagiert.</p>
-            )}
-          </div>
-        </Card>
-
-        <Card className="p-6">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="section-kicker">Rückmeldungen</p>
-              <h2 className="mt-2 text-2xl font-semibold">Kommentare aus dem Team</h2>
-            </div>
-            {canManage ? (
-              <Link href={`/teams/${team.id}/tasks`} className="text-sm font-semibold text-primary">
-                Aufgaben ansehen
-              </Link>
-            ) : null}
-          </div>
-          <div className="mt-5 space-y-3">
-            {responses.length > 0 ? (
-              responses.map((response) => {
-                const member = members.find((entry) => entry.user_id === response.user_id);
-
-                return (
-                  <div key={response.id} className="rounded-none border border-border bg-background/70 p-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="font-semibold">{member?.profile?.full_name ?? member?.profile?.email ?? "Unbekannt"}</p>
-                      <Badge variant={response.status === "yes" ? "success" : response.status === "no" ? "danger" : "muted"}>
-                        {getResponseStatusLabel(response.status)}
-                      </Badge>
-                    </div>
-                    <p className="mt-2 text-sm text-muted-foreground">{response.comment ?? "Kein Kommentar"}</p>
-                  </div>
-                );
-              })
-            ) : (
-              <p className="text-sm text-muted-foreground">Noch keine Rückmeldungen vorhanden.</p>
-            )}
-          </div>
-        </Card>
-      </section>
     </div>
   );
 }

@@ -6,32 +6,25 @@ import { cn } from "@/lib/utils";
 
 const tabs = [
   { label: "Übersicht", getHref: (teamId: string) => `/teams/${teamId}` },
-  { label: "Trainings & Spiele", getHref: (teamId: string) => `/teams/${teamId}/events` },
-  { label: "Team", getHref: (teamId: string) => `/teams/${teamId}/members` },
-  { label: "Aufgaben", getHref: (teamId: string) => `/teams/${teamId}/tasks` },
-  { label: "Organisation", getHref: (teamId: string) => `/teams/${teamId}/organize` },
-  { label: "Statistik", getHref: (teamId: string) => `/teams/${teamId}/stats` }
+  { label: "Trainings & Events", getHref: (teamId: string) => `/teams/${teamId}/events` },
+  { label: "Mitglieder", getHref: (teamId: string) => `/teams/${teamId}/members` }
 ];
 
 type TeamTabsProps = {
   teamId: string;
-  showAdmin?: boolean;
 };
 
-export function TeamTabs({ teamId, showAdmin = false }: TeamTabsProps) {
+export function TeamTabs({ teamId }: TeamTabsProps) {
   const pathname = usePathname();
-  const allTabs = showAdmin
-    ? [...tabs, { label: "Admin", getHref: (currentTeamId: string) => `/teams/${currentTeamId}/admin` }]
-    : tabs;
 
   return (
     <div className="flex gap-2 overflow-x-auto pb-1">
-      {allTabs.map((tab) => {
+      {tabs.map((tab) => {
         const href = tab.getHref(teamId);
         const isOverview = href === `/teams/${teamId}`;
         const isActive = isOverview
           ? pathname === href
-          : pathname === href || pathname.startsWith(`${href}/`) || (href.endsWith("/admin") && pathname === `/teams/${teamId}/settings`);
+          : pathname === href || pathname.startsWith(`${href}/`);
 
         return (
           <Link

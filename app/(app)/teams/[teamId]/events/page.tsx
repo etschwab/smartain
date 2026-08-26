@@ -1,190 +1,85 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CalendarPlus, CheckCircle2, Clock3, MessageSquare } from "lucide-react";
+import { CalendarPlus, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
-import { EventCalendar } from "@/components/team/event-calendar";
-import { EventResponseButtons } from "@/components/team/event-response-buttons";
-import { SubmitButton } from "@/components/forms/submit-button";
 import { TeamTabs } from "@/components/team/team-tabs";
-import { StatsCard } from "@/components/stats-card";
 import { managerRoles } from "@/lib/constants";
 import { getTeamById, listTeamEvents } from "@/lib/data";
-import { getUserFacingSupabaseError, isRecoverableSetupError } from "@/lib/supabase-errors";
 import { requireTeamAccess } from "@/lib/supabase-server";
-import { importEventsCsvAction } from "@/lib/actions";
-import { formatDateTimeLabel, getEventTypeLabel, getResponseStatusLabel } from "@/lib/utils";
+import { formatDateTimeLabel, getEventTypeLabel, isFutureDate } from "@/lib/utils";
 
-type TeamEventsPageProps = {
-  params: Promise<{
-    teamId: string;
-  }>;
-  searchParams: Promise<{
-    view?: string;
-  }>;
-};
+type TeamEventsPageProps = { params: Promise<{ teamId: string }> };
 
-export default async function TeamEventsPage({ params, searchParams }: TeamEventsPageProps) {
+export default async function TeamEventsPage({ params }: TeamEventsPageProps) {
   const { teamId } = await params;
-  const filters = await searchParams;
-  const { supabase, membership, user } = await requireTeamAccess(teamId, `/teams/${teamId}/events`);
+  const { supabase, membership } = await requireTeamAccess(teamId, `/teams/${teamId}/events`);
   const [team, events] = await Promise.all([getTeamById(supabase, teamId), listTeamEvents(supabase, teamId)]);
 
-  if (!team) {
-    notFound();
-  }
+  if (!team) notFound();
 
   const canManage = managerRoles.includes(membership.role);
-  const isOwner = membership.role === "owner";
-  const eventIds = events.map((event) => event.id);
-  let myResponses: Array<{ event_id: string; status: "yes" | "no" | "maybe" }> = [];
+  const upcoming = events.filter((event) => isFutureDate(event.starts_at));
+  const past = events.filter((event) => !isFutureDate(event.starts_at)).reverse();
 
-  if (eventIds.length > 0) {
-    const { data, error } = await supabase.from("event_responses").select("event_id, status").in("event_id", eventIds).eq("user_id", user.id);
-
-    if (!isRecoverableSetupError(error)) {
-      if (error) {
-        throw new Error(getUserFacingSupabaseError(error, "Die Termine konnten nicht geladen werden."));
-      }
-
-      myResponses = (data as Array<{ event_id: string; status: "yes" | "no" | "maybe" }>) ?? [];
-    }
-  }
-
-  const responseMap = new Map(myResponses.map((response) => [response.event_id, response.status]));
-  const view = filters.view === "calendar" ? "calendar" : "list";
-  const trainings = events.filter((event) => event.type === "training").length;
-  const games = events.filter((event) => event.type === "game").length;
-  const now = new Date().getTime();
-  const openResponses = events.filter(
-    (event) =>
-      !responseMap.has(event.id) &&
-      !event.is_cancelled &&
-      new Date(event.starts_at).getTime() >= now &&
-      (!event.response_deadline || new Date(event.response_deadline).getTime() >= now)
-  ).length;
+  const eventList = (items: typeof events) => (
+    <div className="space-y-3">
+      {items.map((event) => (
+        <Link key={event.id} href={`/teams/${team.id}/events/${event.id}`} className="block rounded-xl border border-border bg-card p-5 transition-colors hover:bg-muted/40">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="truncate text-lg font-semibold">{event.title}</h3>
+                <Badge>{getEventTypeLabel(event.type)}</Badge>
+                {event.is_cancelled ? <Badge variant="danger">Abgesagt</Badge> : null}
+              </div>
+              <p className="mt-2 text-sm text-muted-foreground">{formatDateTimeLabel(event.starts_at)}</p>
+              <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground"><MapPin className="h-4 w-4" />{event.location ?? "Ort noch offen"}</p>
+            </div>
+            <span className="text-sm font-semibold text-primary">Öffnen</span>
+          </div>
+        </Link>
+      ))}
+    </div>
+  );
 
   return (
-    <div className="page-stack">
-      <Card className="p-8">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+    <div className="space-y-8">
+      <Card className="p-6 sm:p-8">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="section-kicker">Termine</p>
-            <h1 className="mt-2 text-4xl font-semibold">{team.name}</h1>
-            <p className="mt-3 text-muted-foreground">Trainings, Spiele, Meetings und Events in Liste und Kalenderansicht.</p>
+            <p className="section-kicker">Trainings & Events</p>
+            <h1 className="mt-2 text-3xl font-semibold sm:text-4xl">{team.name}</h1>
+            <p className="mt-3 text-muted-foreground">Alle Termine dieses Teams an einem Ort.</p>
           </div>
-          <div className="flex flex-wrap gap-3">
-            <Button asChild variant={view === "list" ? "primary" : "secondary"} size="sm">
-              <Link href={`/teams/${team.id}/events?view=list`}>Liste</Link>
-            </Button>
-            <Button asChild variant={view === "calendar" ? "primary" : "secondary"} size="sm">
-              <Link href={`/teams/${team.id}/events?view=calendar`}>Kalender</Link>
-            </Button>
-            {canManage ? (
-              <Button asChild>
-                <Link href={`/teams/${team.id}/events/new`}>
-                  <CalendarPlus className="h-4 w-4" />
-                  Neuer Termin
-                </Link>
-              </Button>
-            ) : null}
-          </div>
+          {canManage ? (
+            <Button asChild><Link href={`/teams/${team.id}/events/new`}><CalendarPlus className="h-4 w-4" />Neuer Termin</Link></Button>
+          ) : null}
         </div>
-        <div className="mt-6">
-          <TeamTabs teamId={team.id} showAdmin={isOwner} />
-        </div>
+        <div className="mt-6"><TeamTabs teamId={team.id} /></div>
       </Card>
-
-      <section className="grid gap-4 md:grid-cols-3">
-        <StatsCard title="Trainings" value={String(trainings)} description="geplante Trainingseinheiten" icon={<CalendarPlus className="h-5 w-5" />} />
-        <StatsCard title="Spiele" value={String(games)} description="Partien und Spieltage" icon={<CheckCircle2 className="h-5 w-5" />} />
-        <StatsCard title="Offen" value={String(openResponses)} description="deine unbeantworteten Termine" icon={<Clock3 className="h-5 w-5" />} />
-      </section>
-
-      {canManage ? (
-        <Card className="p-6">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <p className="section-kicker">Spielplan-Import</p>
-              <h2 className="mt-2 text-2xl font-semibold">Mehrere Termine aus CSV</h2>
-              <p className="mt-2 text-sm text-muted-foreground">Spalten: title, type, starts_at, ends_at, location, description. Datum als ISO-Wert oder verständliches Datum.</p>
-            </div>
-            <form action={importEventsCsvAction.bind(null, team.id)} className="flex w-full max-w-xl flex-col gap-3 sm:flex-row sm:items-center">
-              <input name="file" type="file" accept=".csv,text/csv" required className="min-w-0 flex-1 border border-border bg-background/70 p-3 text-sm file:mr-3 file:border-0 file:bg-primary file:px-3 file:py-2 file:font-semibold file:text-primary-foreground" />
-              <SubmitButton variant="secondary" pendingLabel="Importiert...">CSV importieren</SubmitButton>
-            </form>
-          </div>
-        </Card>
-      ) : null}
 
       {events.length === 0 ? (
         <EmptyState
-          title="Noch keine Termine erstellt"
-          description="Plane euer erstes Training, Spiel oder Meeting direkt im Teamkalender."
-          action={
-            canManage ? (
-              <Button asChild>
-                <Link href={`/teams/${team.id}/events/new`}>Ersten Termin erstellen</Link>
-              </Button>
-            ) : undefined
-          }
+          title="Noch keine Trainings oder Events"
+          description="Erstelle den ersten Termin für dieses Team."
+          action={canManage ? <Button asChild><Link href={`/teams/${team.id}/events/new`}>Termin erstellen</Link></Button> : undefined}
         />
-      ) : view === "calendar" ? (
-        <EventCalendar events={events} />
       ) : (
-        <div className="space-y-4">
-          {events.map((event) => {
-            const response = responseMap.get(event.id);
-            const canRespond =
-              !event.is_cancelled &&
-              new Date(event.starts_at).getTime() >= now &&
-              (!event.response_deadline || new Date(event.response_deadline).getTime() >= now);
-
-            return (
-              <Card key={event.id} className="p-6 transition-transform hover:-translate-y-1">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                  <div className="space-y-3">
-                    <div className="flex flex-wrap items-center gap-3">
-                      <Link href={`/teams/${team.id}/events/${event.id}`} className="text-2xl font-semibold hover:text-primary hover:underline">
-                        {event.title}
-                      </Link>
-                      <Badge>{getEventTypeLabel(event.type)}</Badge>
-                      {event.is_cancelled ? <Badge variant="danger">Abgesagt</Badge> : null}
-                      {response ? (
-                        <Badge variant={response === "yes" ? "success" : response === "no" ? "danger" : "muted"}>
-                          {getResponseStatusLabel(response)}
-                        </Badge>
-                      ) : (
-                        <Badge variant="muted">Antwort offen</Badge>
-                      )}
-                    </div>
-                    <p className="text-sm text-muted-foreground">{formatDateTimeLabel(event.starts_at)}</p>
-                    <p className="text-sm text-muted-foreground">{event.location ?? "Ort folgt"}</p>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    {canRespond ? (
-                      <EventResponseButtons
-                        teamId={team.id}
-                        eventId={event.id}
-                        returnPath={`/teams/${team.id}/events`}
-                        currentStatus={response}
-                        compact
-                      />
-                    ) : null}
-                    <Button asChild variant="secondary" size="sm">
-                      <Link href={`/teams/${team.id}/events/${event.id}`}>
-                        <MessageSquare className="h-4 w-4" />
-                        Details
-                      </Link>
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            );
-          })}
-        </div>
+        <>
+          <section>
+            <h2 className="mb-4 text-xl font-semibold">Bevorstehend</h2>
+            {upcoming.length > 0 ? eventList(upcoming) : <p className="rounded-xl border border-dashed border-border p-5 text-sm text-muted-foreground">Keine bevorstehenden Termine.</p>}
+          </section>
+          {past.length > 0 ? (
+            <section>
+              <h2 className="mb-4 text-xl font-semibold">Vergangen</h2>
+              {eventList(past)}
+            </section>
+          ) : null}
+        </>
       )}
     </div>
   );

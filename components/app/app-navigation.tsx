@@ -2,15 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, CalendarDays, ChevronRight, LayoutDashboard, ShieldCheck, Users } from "lucide-react";
+import { ChevronRight, LayoutDashboard, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const items = [
   { href: "/dashboard", label: "Start", hint: "Dein Überblick", icon: LayoutDashboard },
-  { href: "/calendar", label: "Termine", hint: "Plan & Spiel", icon: CalendarDays },
-  { href: "/teams", label: "Teams", hint: "Deine Kabinen", icon: Users },
-  { href: "/inbox", label: "Inbox", hint: "Offene Aktionen", icon: Bell },
-  { href: "/profile", label: "Profil", hint: "Konto & Status", icon: ShieldCheck }
+  { href: "/teams", label: "Teams", hint: "Termine & Mitglieder", icon: Users }
 ];
 
 type AppNavigationProps = {
@@ -25,7 +22,7 @@ export function AppNavigation({ variant = "sidebar", onNavigate }: AppNavigation
   return (
     <nav
       aria-label="App-Navigation"
-      className={cn(isMobile ? "grid h-full grid-cols-5 gap-1" : "flex flex-col gap-1.5")}
+      className={cn(isMobile ? "grid h-full grid-cols-2 gap-1" : "flex flex-col gap-1.5")}
     >
       {items.map((item) => {
         const Icon = item.icon;

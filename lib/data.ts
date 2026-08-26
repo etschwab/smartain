@@ -311,6 +311,39 @@ export async function getEventById(supabase: AppSupabaseClient, eventId: string)
   return (data as EventRecord | null) ?? null;
 }
 
+export async function getCoreDashboardData(supabase: AppSupabaseClient, userId: string) {
+  const teams = await listUserTeams(supabase, userId);
+  const teamIds = teams.map((team) => team.id);
+
+  if (teamIds.length === 0) {
+    return { teams, upcomingEvents: [] as EventWithTeam[] };
+  }
+
+  const { data, error } = await supabase
+    .from("events")
+    .select("*")
+    .in("team_id", teamIds)
+    .gte("starts_at", new Date().toISOString())
+    .lte("starts_at", endOfDay(addDays(new Date(), 30)).toISOString())
+    .eq("is_cancelled", false)
+    .order("starts_at", { ascending: true })
+    .limit(6);
+
+  if (isRecoverableSetupError(error)) {
+    return { teams, upcomingEvents: [] as EventWithTeam[] };
+  }
+
+  assertNoError(error, "Die nächsten Termine konnten nicht geladen werden");
+  const teamMap = new Map(teams.map((team) => [team.id, team]));
+  const events = ((data as EventRecord[]) ?? []).map((event) => ({
+    ...event,
+    team: teamMap.get(event.team_id) ?? null,
+    response: null
+  })) satisfies EventWithTeam[];
+
+  return { teams, upcomingEvents: events };
+}
+
 export async function listEventResponses(supabase: AppSupabaseClient, eventId: string) {
   const { data, error } = await supabase
     .from("event_responses")

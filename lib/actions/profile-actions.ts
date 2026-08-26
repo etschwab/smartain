@@ -13,28 +13,11 @@ function getNullableString(formData: FormData, name: string) {
   return value.length > 0 ? value : null;
 }
 
-function getNullableNumber(formData: FormData, name: string) {
-  const value = getString(formData, name);
-
-  if (!value) {
-    return null;
-  }
-
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : null;
-}
-
 export async function updateProfileAction(formData: FormData) {
   const { supabase, user } = await requireProfile("/profile");
   const payload = {
     id: user.id,
     full_name: getNullableString(formData, "full_name"),
-    phone: getNullableString(formData, "phone"),
-    jersey_number: getNullableNumber(formData, "jersey_number"),
-    position: getNullableString(formData, "position"),
-    birthday: getNullableString(formData, "birthday"),
-    emergency_contact_name: getNullableString(formData, "emergency_contact_name"),
-    emergency_contact_phone: getNullableString(formData, "emergency_contact_phone"),
     email: user.email ?? null
   };
 
@@ -64,19 +47,4 @@ export async function updateProfileAction(formData: FormData) {
   }
 
   redirect("/profile?toast=profile-updated");
-}
-
-export async function markNotificationsReadAction() {
-  const { supabase, user } = await requireProfile("/inbox");
-  const { error } = await supabase.from("notifications").update({ is_read: true }).eq("user_id", user.id).eq("is_read", false);
-
-  if (isRecoverableSetupError(error)) {
-    redirect("/inbox");
-  }
-
-  if (error) {
-    throw new Error(getUserFacingSupabaseError(error, "Die Benachrichtigungen konnten nicht aktualisiert werden."));
-  }
-
-  redirect("/inbox?toast=notifications-read");
 }

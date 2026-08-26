@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarDays, LogOut, Plus } from "lucide-react";
+import { LogOut, Plus } from "lucide-react";
 import { Logo } from "@/components/branding/logo";
 import { AppNavigation } from "@/components/app/app-navigation";
 import { TeamSwitcher } from "@/components/team/team-switcher";
@@ -77,13 +77,6 @@ export function AppShell({ profile, teams, children }: AppShellProps) {
               <TeamSwitcher teams={teams} canCreateTeam={false} />
             </div>
             <div className="ml-auto flex items-center gap-2">
-              <Link
-                href="/calendar"
-                className="hidden items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:inline-flex"
-              >
-                <CalendarDays className="h-4 w-4" />
-                Kalender
-              </Link>
               {canCreateTeam ? (
                 <Link
                   href="/teams/new"
@@ -114,7 +107,7 @@ export function AppShell({ profile, teams, children }: AppShellProps) {
         </main>
       </div>
 
-      <div className="fixed inset-x-3 bottom-[max(0.5rem,env(safe-area-inset-bottom))] z-50 h-[4.35rem] rounded-2xl border border-border bg-background/95 p-1.5 shadow-[0_0.75rem_2rem_rgb(0_0_0/0.24)] lg:hidden">
+      <div className="fixed bottom-[max(0.5rem,env(safe-area-inset-bottom))] left-1/2 z-50 h-[4.35rem] w-[calc(100%-1.5rem)] max-w-sm -translate-x-1/2 rounded-2xl border border-border bg-background/95 p-1.5 shadow-[0_0.75rem_2rem_rgb(0_0_0/0.24)] lg:hidden">
         <AppNavigation variant="mobile" />
       </div>
     </div>
