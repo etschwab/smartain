@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LogOut, Plus } from "lucide-react";
+import { LogOut, Plus, UserRound } from "lucide-react";
 import { Logo } from "@/components/branding/logo";
 import { AppNavigation } from "@/components/app/app-navigation";
 import { TeamSwitcher } from "@/components/team/team-switcher";
@@ -107,8 +107,27 @@ export function AppShell({ profile, teams, children }: AppShellProps) {
         </main>
       </div>
 
-      <div className="fixed bottom-[max(0.5rem,env(safe-area-inset-bottom))] left-1/2 z-50 h-[4.35rem] w-[calc(100%-1.5rem)] max-w-sm -translate-x-1/2 rounded-2xl border border-border bg-background/95 p-1.5 shadow-[0_0.75rem_2rem_rgb(0_0_0/0.24)] lg:hidden">
-        <AppNavigation variant="mobile" />
+      <div className="fixed bottom-[max(0.5rem,env(safe-area-inset-bottom))] left-1/2 z-50 h-[4.35rem] w-[calc(100%-1rem)] max-w-md -translate-x-1/2 rounded-2xl border border-border bg-background/95 p-1.5 shadow-[0_0.75rem_2rem_rgb(0_0_0/0.24)] backdrop-blur-xl lg:hidden">
+        <div className="grid h-full grid-cols-[2fr_1fr_1fr] gap-1">
+          <AppNavigation variant="mobile" />
+          <Link
+            href="/profile"
+            className="flex h-full min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 py-1.5 text-[0.62rem] font-semibold leading-none text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+          >
+            <span className="grid h-6 w-6 place-items-center"><UserRound className="h-5 w-5" /></span>
+            Profil
+          </Link>
+          <form action={signOutAction} className="h-full">
+            <button
+              type="submit"
+              className="flex h-full w-full min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 py-1.5 text-[0.62rem] font-semibold leading-none text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+              aria-label="Von Smartrain abmelden"
+            >
+              <span className="grid h-6 w-6 place-items-center"><LogOut className="h-5 w-5" /></span>
+              Abmelden
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );
