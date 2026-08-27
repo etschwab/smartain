@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowDownRight, ArrowRight, BarChart3, CalendarDays, Car, ClipboardCheck, MessageCircle, UserRoundPlus, Users, Vote } from "lucide-react";
+import { ArrowDownRight, ArrowRight, BarChart3, CalendarDays, Car, Check, ClipboardCheck, Clock3, MapPin, MessageCircle, ShieldCheck, UserRoundPlus, Users, Vote } from "lucide-react";
 
 const features = [
   { number: "01", title: "Teams & Rollen", description: "Owner, Coaches, Spieler und Eltern arbeiten mit klaren Rechten in einem gemeinsamen Teamraum.", icon: Users },
@@ -25,12 +25,25 @@ const audiences = [
   ["03", "Eltern", "Behalten Termine und organisatorische Informationen im Blick, ohne wichtige Details in Chats suchen zu müssen."]
 ];
 
+const benefits = [
+  ["Ein Teamraum", "für Termine, Aufgaben und Kommunikation"],
+  ["Jede Rolle", "sieht nur, was sie wirklich braucht"],
+  ["Jederzeit", "mobil und ohne App-Chaos erreichbar"]
+];
+
+const faqs = [
+  ["Für welche Teams ist Smartrain gedacht?", "Für Sportteams, Trainerstäbe und Vereine, die Training, Spieltage und die Organisation dazwischen an einem Ort bündeln möchten."],
+  ["Brauchen alle Mitglieder einen eigenen Zugang?", "Ja. Coaches, Spieler und Eltern treten über einen Einladungslink bei und erhalten die passende Rolle mit den dazugehörigen Rechten."],
+  ["Funktioniert Smartrain auch auf dem Smartphone?", "Ja. Die Oberfläche ist für mobile Nutzung optimiert, damit Zu- und Absagen, Termine und Mitteilungen auch unterwegs schnell erreichbar sind."],
+  ["Kann ich erst einmal kostenlos starten?", "Ja. Du kannst direkt ein Konto erstellen, deinen Teamraum anlegen und die ersten Mitglieder einladen."]
+];
+
 export default function HomePage() {
   return (
     <main id="main-content">
       <section className="smartrain-hero content-wrap">
         <div className="smartrain-hero-copy">
-          <p className="section-kicker">Team-App · Training · 2026</p>
+          <p className="section-kicker">Die Team-App für den Sportalltag</p>
           <h1>
             Smartrain
             <em>Team.</em>
@@ -39,13 +52,30 @@ export default function HomePage() {
             <p>Team-Management &amp; Training</p>
             <ArrowDownRight className="h-6 w-6 text-primary" aria-hidden="true" />
           </div>
-          <p className="max-w-xl text-base leading-7 text-muted-foreground sm:text-lg">Die ruhige Kommandozentrale für Termine, Zusagen, Kommunikation, Fahrten, Kasse und Spieltage.</p>
+          <p className="max-w-xl text-base leading-7 text-muted-foreground sm:text-lg">Weniger Nachrichtenchaos, mehr Zeit fürs Team: Plane Termine, sammle Zusagen und organisiere Spieltage in einer gemeinsamen, übersichtlichen App.</p>
           <div className="smartrain-hero-actions">
-            <Link href="/signup" className="editorial-link">Kostenlos starten <ArrowRight className="h-4 w-4" /></Link>
-            <Link href="/login" className="editorial-link text-muted-foreground">Einloggen</Link>
+            <Link href="/signup" className="hero-primary-action">Team kostenlos erstellen <ArrowRight className="h-4 w-4" /></Link>
+            <Link href="#features" className="editorial-link text-muted-foreground">Funktionen ansehen</Link>
           </div>
+          <p className="hero-trust"><ShieldCheck aria-hidden="true" /> In wenigen Minuten eingerichtet · Für Coaches, Spieler &amp; Eltern</p>
+        </div>
+
+        <div className="hero-product-preview" aria-label="Beispielansicht eines Team-Dashboards">
+          <div className="preview-topline"><div><span className="preview-dot" /> FC Beispiel · 1. Mannschaft</div><span>Dashboard</span></div>
+          <div className="preview-event">
+            <div className="preview-date"><strong>29</strong><span>Aug</span></div>
+            <div className="preview-event-copy"><span className="preview-label">Nächster Termin</span><h2>Training</h2><p><Clock3 aria-hidden="true" /> 18:30 Uhr <MapPin aria-hidden="true" /> Sportplatz Nord</p></div>
+          </div>
+          <div className="preview-status-grid">
+            <div><strong>16</strong><span><Check aria-hidden="true" /> Dabei</span></div><div><strong>3</strong><span>Noch offen</span></div><div><strong>2</strong><span>Abwesend</span></div>
+          </div>
+          <div className="preview-task"><span><ClipboardCheck aria-hidden="true" /></span><div><strong>Material fürs Training</strong><small>2 von 3 Aufgaben erledigt</small></div><span className="preview-progress">67%</span></div>
         </div>
       </section>
+
+      <section className="benefit-strip" aria-label="Vorteile von Smartrain"><div className="content-wrap benefit-strip-grid">
+        {benefits.map(([title, description], index) => <div key={title}><span>0{index + 1}</span><p><strong>{title}</strong>{description}</p></div>)}
+      </div></section>
 
       <section id="features" className="editorial-section scroll-mt-28">
         <div className="content-wrap">
@@ -123,6 +153,13 @@ export default function HomePage() {
           <h2 className="max-w-5xl text-5xl font-semibold leading-[0.9] tracking-[-0.065em] sm:text-7xl lg:text-8xl">Dein Team.<br /><span className="display-serif text-primary">Ein klarer Plan.</span></h2>
           <Link href="/signup" className="inline-flex w-fit items-center gap-2 bg-primary px-6 py-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/85">Kostenlos starten <ArrowRight className="h-4 w-4" /></Link>
         </div>
+        </div>
+      </section>
+
+      <section className="editorial-section">
+        <div className="content-wrap faq-layout">
+          <div className="faq-intro"><p className="section-kicker">Gut zu wissen</p><h2>Fragen vor<br /><span className="display-serif">dem Anpfiff.</span></h2><p>Alles, was du für den Start mit deinem Team wissen musst.</p></div>
+          <div className="faq-list">{faqs.map(([question, answer], index) => <article key={question}><span>0{index + 1}</span><div><h3>{question}</h3><p>{answer}</p></div></article>)}</div>
         </div>
       </section>
     </main>
