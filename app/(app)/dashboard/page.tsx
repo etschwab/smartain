@@ -18,8 +18,8 @@ export default async function DashboardPage() {
   const canCreateTeam = ownedTeams.length < MAX_OWNED_TEAMS;
 
   return (
-    <div className="space-y-8">
-      <Card className="p-6 sm:p-8">
+    <div className="space-y-6 sm:space-y-8">
+      <section className="border-b border-border/70 pb-6 sm:pb-8">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
             <p className="section-kicker">Übersicht</p>
@@ -47,7 +47,7 @@ export default async function DashboardPage() {
             ) : null}
           </div>
         </div>
-      </Card>
+      </section>
 
       {dashboard.teams.length === 0 ? (
         <EmptyState
@@ -62,7 +62,7 @@ export default async function DashboardPage() {
           }
         />
       ) : (
-        <section className="grid gap-6 xl:grid-cols-[1.1fr,0.9fr]">
+        <section className="grid gap-4 xl:grid-cols-[1.1fr,0.9fr]">
           <Card className="p-6">
             <div className="flex items-center justify-between gap-4">
               <div>
@@ -78,7 +78,7 @@ export default async function DashboardPage() {
                 <Link
                   key={team.id}
                   href={`/teams/${team.id}`}
-                  className="flex items-center justify-between gap-4 rounded-xl border border-border bg-background/70 p-4 transition-colors hover:bg-muted/50"
+                  className="flex items-center justify-between gap-4 rounded-xl border border-transparent bg-background/45 p-4 transition-colors hover:border-border/70 hover:bg-muted/50"
                 >
                   <span className="flex min-w-0 items-center gap-3">
                     <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-muted">

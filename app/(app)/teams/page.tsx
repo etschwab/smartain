@@ -16,10 +16,9 @@ export default async function TeamsPage() {
   const canCreateTeam = ownedTeams.length < MAX_OWNED_TEAMS;
 
   return (
-    <div className="page-stack">
-      <Card className="relative overflow-hidden border-red-200/70 bg-[linear-gradient(135deg,hsl(var(--card)),hsl(var(--accent)/0.48))] p-6 dark:border-red-500/15">
-        <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-primary/[0.05] blur-3xl" />
-        <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+    <div className="space-y-6 sm:space-y-8">
+      <section className="border-b border-border/70 pb-6 sm:pb-8">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="section-kicker">Teams</p>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">Deine Teams</h1>
@@ -40,7 +39,7 @@ export default async function TeamsPage() {
             </Button>
           )}
         </div>
-      </Card>
+      </section>
 
       {teams.length === 0 ? (
         <EmptyState
@@ -53,12 +52,12 @@ export default async function TeamsPage() {
           }
         />
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {teams.map((team) => {
             const teamAccent = getTeamAccentColor(team.theme_color);
 
             return (
-              <Card key={team.id} className="overflow-hidden p-4 transition-transform hover:-translate-y-0.5">
+              <Card key={team.id} className="overflow-hidden p-5 transition-[border-color,transform] hover:-translate-y-0.5 hover:border-primary/25">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <div

@@ -36,7 +36,7 @@ export function TeamSwitcher({ teams, canCreateTeam }: TeamSwitcherProps) {
           if (event.target.value) router.push(`/teams/${event.target.value}`);
           else router.push("/teams");
         }}
-        className="h-9 min-w-0 max-w-52 rounded-full border border-border bg-card px-3 text-sm font-semibold text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+        className="h-9 min-w-0 max-w-52 rounded-lg border border-border/80 bg-card/70 px-3 text-sm font-semibold text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
       >
         <option value="">Alle Teams</option>
         {teams.map((team) => (

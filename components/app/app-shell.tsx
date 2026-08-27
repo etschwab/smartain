@@ -22,7 +22,7 @@ export function AppShell({ profile, teams, children }: AppShellProps) {
     <div className="min-h-screen pb-24 lg:pb-0">
       <a className="skip-link" href="#main-content">Zum Inhalt springen</a>
 
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-[17rem] flex-col border-r border-border bg-background/95 lg:flex">
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-[16rem] flex-col border-r border-border/70 bg-background/90 backdrop-blur-xl lg:flex">
         <div className="border-b border-border/70 px-5 py-5">
           <Logo href="/dashboard" />
           <div className="mt-5 flex items-center gap-2 border-l-2 border-primary px-3 py-1.5">
@@ -69,8 +69,8 @@ export function AppShell({ profile, teams, children }: AppShellProps) {
         </div>
       </aside>
 
-      <div className="lg:pl-[17rem]">
-        <header className="sticky top-0 z-30 border-b border-border bg-background/95">
+      <div className="lg:pl-[16rem]">
+        <header className="sticky top-0 z-30 border-b border-border/60 bg-background/85 backdrop-blur-xl">
           <div className="content-wrap flex min-h-16 items-center justify-between gap-3 py-2">
             <Logo href="/dashboard" compact className="lg:hidden" />
             <div className="hidden min-w-0 lg:block">
@@ -102,7 +102,7 @@ export function AppShell({ profile, teams, children }: AppShellProps) {
           ) : null}
         </header>
 
-        <main id="main-content" className="content-wrap py-8 lg:py-10">
+        <main id="main-content" className="content-wrap py-6 sm:py-8 lg:py-10">
           {children}
         </main>
       </div>
