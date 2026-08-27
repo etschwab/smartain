@@ -26,7 +26,7 @@ export default async function SignupPage({ searchParams }: SignupPageProps) {
   }
 
   return (
-    <main id="main-content" className="content-wrap py-12 sm:py-20">
+    <main id="main-content" className="content-wrap flex min-h-[calc(100svh-8rem)] items-center py-8 sm:py-14">
       <AuthForm
         mode="signup"
         nextPath={params.next}

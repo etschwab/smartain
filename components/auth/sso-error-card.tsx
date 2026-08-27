@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ShieldAlert } from "lucide-react";
+import { ArrowLeft, RotateCcw, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
@@ -16,15 +16,15 @@ export function SsoErrorCard({ error, nextPath }: { error: string; nextPath: str
 
   return (
     <Card className="mx-auto w-full max-w-lg p-8 text-center sm:p-10">
-      <ShieldAlert className="mx-auto h-10 w-10 text-destructive" />
+      <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-destructive/10 text-destructive"><ShieldAlert className="h-6 w-6" /></span>
       <h1 className="mt-5 text-2xl font-semibold">Anmeldung nicht abgeschlossen</h1>
       <p className="mt-3 text-sm leading-6 text-muted-foreground">
         {messages[error] ?? "Bei der zentralen Anmeldung ist ein unerwarteter Fehler aufgetreten."}
       </p>
-      <Button asChild className="mt-7 w-full">
-        <Link href={retryUrl}>Erneut versuchen</Link>
-      </Button>
+      <div className="mt-7 grid gap-3">
+        <Button asChild className="w-full"><Link href={retryUrl}><RotateCcw className="h-4 w-4" />Erneut versuchen</Link></Button>
+        <Button asChild variant="ghost" className="w-full"><Link href="/"><ArrowLeft className="h-4 w-4" />Zur Startseite</Link></Button>
+      </div>
     </Card>
   );
 }
-

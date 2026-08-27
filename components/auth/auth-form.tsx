@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Eye, EyeOff, LockKeyhole, Mail } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -29,6 +30,7 @@ export function AuthForm({ mode, nextPath, initialMessage }: AuthFormProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(initialMessage ?? null);
@@ -79,8 +81,14 @@ export function AuthForm({ mode, nextPath, initialMessage }: AuthFormProps) {
   }
 
   function validateForm() {
-    if (!email.trim()) {
+    const normalizedEmail = email.trim();
+
+    if (!normalizedEmail) {
       return "Bitte gib deine E-Mail-Adresse ein.";
+    }
+
+    if (!/^\S+@\S+\.\S+$/.test(normalizedEmail)) {
+      return "Bitte gib eine gültige E-Mail-Adresse ein.";
     }
 
     if (!password) {
@@ -121,7 +129,7 @@ export function AuthForm({ mode, nextPath, initialMessage }: AuthFormProps) {
 
       if (mode === "login") {
         const { error } = await supabase.auth.signInWithPassword({
-          email,
+          email: email.trim().toLowerCase(),
           password
         });
 
@@ -138,7 +146,7 @@ export function AuthForm({ mode, nextPath, initialMessage }: AuthFormProps) {
       }
 
       const { data, error } = await supabase.auth.signUp({
-        email,
+        email: email.trim().toLowerCase(),
         password,
         options: {
           emailRedirectTo: getEmailRedirectTo(),
@@ -163,7 +171,7 @@ export function AuthForm({ mode, nextPath, initialMessage }: AuthFormProps) {
       }
 
       const loginResult = await supabase.auth.signInWithPassword({
-        email,
+        email: email.trim().toLowerCase(),
         password
       });
 
@@ -199,7 +207,7 @@ export function AuthForm({ mode, nextPath, initialMessage }: AuthFormProps) {
     try {
       const supabase = createClient();
       const { error } = await supabase.auth.signInWithOtp({
-        email,
+        email: email.trim().toLowerCase(),
         options: {
           emailRedirectTo: getEmailRedirectTo()
         }
@@ -221,21 +229,21 @@ export function AuthForm({ mode, nextPath, initialMessage }: AuthFormProps) {
   }
 
   return (
-    <Card className="mx-auto w-full max-w-lg overflow-hidden p-8 sm:p-10">
-      <div className="mb-8 flex flex-col items-center gap-4 text-center">
+    <Card className="mx-auto w-full max-w-md overflow-hidden p-6 sm:p-8">
+      <div className="mb-7 flex flex-col items-center gap-4 text-center">
         <AuthBrand />
         <div className="space-y-2">
-          <h1 className="text-3xl font-semibold">
-            {mode === "login" ? "Willkommen zurück" : "Erstelle deinen Account"}
+          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+            {mode === "login" ? "Bei Smartrain anmelden" : "Account erstellen"}
           </h1>
           <p className="text-sm text-muted-foreground">
             {mode === "login"
-              ? "Logge dich ein und spring direkt ins Team-Dashboard."
-              : "Starte dein Team, lade Mitglieder ein und plane eure nächsten Termine."}
+              ? "Weiter zu deinen Teams und Terminen."
+              : "In wenigen Schritten bereit für dein erstes Team."}
           </p>
           {nextPath ? (
             <p className="text-xs font-medium text-primary">
-              Nach dem Login geht es direkt weiter zu {nextPath}.
+              Nach der Anmeldung geht es automatisch weiter.
             </p>
           ) : null}
         </div>
@@ -264,33 +272,23 @@ export function AuthForm({ mode, nextPath, initialMessage }: AuthFormProps) {
           <label htmlFor="email" className="text-sm font-semibold">
             E-Mail
           </label>
-          <Input
-            id="email"
-            type="email"
-            name="email"
-            placeholder="deine@email.ch"
-            autoComplete="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            required
-          />
+          <div className="relative">
+            <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+            <Input id="email" type="email" name="email" placeholder="name@beispiel.ch" autoComplete="email" inputMode="email" value={email} onChange={(event) => setEmail(event.target.value)} className="pl-10" required />
+          </div>
         </div>
 
         <div className="space-y-2">
           <label htmlFor="password" className="text-sm font-semibold">
             Passwort
           </label>
-          <Input
-            id="password"
-            type="password"
-            name="password"
-            placeholder="Mindestens 6 Zeichen"
-            autoComplete={mode === "login" ? "current-password" : "new-password"}
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            minLength={6}
-            required
-          />
+          <div className="relative">
+            <LockKeyhole className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+            <Input id="password" type={showPassword ? "text" : "password"} name="password" placeholder="Mindestens 6 Zeichen" autoComplete={mode === "login" ? "current-password" : "new-password"} value={password} onChange={(event) => setPassword(event.target.value)} className="px-10" minLength={6} required />
+            <button type="button" onClick={() => setShowPassword((visible) => !visible)} className="absolute right-1.5 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground" aria-label={showPassword ? "Passwort verbergen" : "Passwort anzeigen"}>
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
         </div>
 
         {isSignup ? (
@@ -300,7 +298,7 @@ export function AuthForm({ mode, nextPath, initialMessage }: AuthFormProps) {
             </label>
             <Input
               id="confirm-password"
-              type="password"
+              type={showPassword ? "text" : "password"}
               name="confirm_password"
               placeholder="Passwort erneut eingeben"
               autoComplete="new-password"
@@ -330,13 +328,15 @@ export function AuthForm({ mode, nextPath, initialMessage }: AuthFormProps) {
           </label>
         ) : null}
 
-        {errorMessage ? <FormError message={errorMessage} /> : null}
+        <div aria-live="polite">
+          {errorMessage ? <FormError message={errorMessage} /> : null}
 
-        {statusMessage ? (
+          {statusMessage ? (
           <div className="rounded-2xl border border-primary/15 bg-primary/10 px-4 py-3 text-sm text-foreground">
             {statusMessage}
           </div>
-        ) : null}
+          ) : null}
+        </div>
 
         {isSignup ? (
           <p className="text-xs leading-5 text-muted-foreground">
@@ -356,10 +356,10 @@ export function AuthForm({ mode, nextPath, initialMessage }: AuthFormProps) {
       </div>
 
       <Button className="w-full" type="button" variant="secondary" disabled={submitting} onClick={handleMagicLink}>
-        Magic Link senden
+        Ohne Passwort per E-Mail anmelden
       </Button>
 
-      <p className="mt-8 text-center text-sm text-muted-foreground">
+      <p className="mt-7 text-center text-sm text-muted-foreground">
         {mode === "login" ? "Noch kein Konto?" : "Bereits registriert?"}{" "}
         <Link
           href={mode === "login" ? `/signup${nextPath ? `?next=${encodeURIComponent(nextPath)}` : ""}` : `/login${nextPath ? `?next=${encodeURIComponent(nextPath)}` : ""}`}
