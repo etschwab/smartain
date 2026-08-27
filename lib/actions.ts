@@ -11,9 +11,7 @@ export {
 } from "@/lib/actions/team-actions";
 export {
   createEventAction,
-  createEventFromTemplateAction,
   deleteEventAction,
-  deleteEventTemplateAction,
   toggleEventCancellationAction,
   updateEventAction
 } from "@/lib/actions/event-actions";

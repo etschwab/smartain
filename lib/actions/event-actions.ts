@@ -1,6 +1,6 @@
 "use server";
 
-import { addMinutes, addWeeks } from "date-fns";
+import { addWeeks } from "date-fns";
 import { redirect } from "next/navigation";
 import { requireTeamManager } from "@/lib/supabase-server";
 import { getUserFacingSupabaseError } from "@/lib/supabase-errors";
@@ -22,11 +22,19 @@ export async function createEventAction(teamId: string, formData: FormData) {
   const endsAt = getString(formData, "ends_at");
 
   if (!title || !type || !startsAt || !endsAt) throw new Error("Bitte fülle alle Pflichtfelder aus.");
-  if (new Date(endsAt).getTime() <= new Date(startsAt).getTime()) throw new Error("Die Endzeit muss nach der Startzeit liegen.");
 
   const recurrenceCount = Math.min(52, Math.max(1, Number.parseInt(getString(formData, "recurrence_count") || "1", 10) || 1));
   const startDate = new Date(startsAt);
   const endDate = new Date(endsAt);
+
+  if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+    throw new Error("Bitte gib eine gültige Start- und Endzeit ein.");
+  }
+
+  if (endDate.getTime() <= startDate.getTime()) {
+    throw new Error("Die Endzeit muss nach der Startzeit liegen.");
+  }
+
   const payloads = Array.from({ length: recurrenceCount }, (_, index) => ({
     team_id: teamId,
     title,
@@ -38,88 +46,17 @@ export async function createEventAction(teamId: string, formData: FormData) {
     created_by: user.id
   }));
 
-  const { data: events, error } = await supabase.from("events").insert(payloads).select("id").order("starts_at", { ascending: true });
-  if (error) throw new Error(getUserFacingSupabaseError(error, "Der Termin konnte nicht erstellt werden."));
+  const { data: events, error } = await supabase
+    .from("events")
+    .insert(payloads)
+    .select("id, starts_at")
+    .order("starts_at", { ascending: true });
 
-  if (getString(formData, "save_as_template") === "yes") {
-    const templateName = getString(formData, "template_name") || title;
-    const durationMinutes = Math.round((endDate.getTime() - startDate.getTime()) / 60_000);
-    const { error: templateError } = await supabase.from("event_templates").upsert({
-      team_id: teamId,
-      name: templateName,
-      title,
-      type,
-      source_starts_at: startDate.toISOString(),
-      duration_minutes: durationMinutes,
-      location: getNullableString(formData, "location"),
-      description: getNullableString(formData, "description"),
-      created_by: user.id
-    }, { onConflict: "team_id,name" });
-
-    if (templateError) {
-      throw new Error(getUserFacingSupabaseError(templateError, "Die Vorlage konnte nicht gespeichert werden."));
-    }
+  if (error || !events?.[0]?.id) {
+    throw new Error(getUserFacingSupabaseError(error, "Der Termin konnte nicht erstellt werden."));
   }
 
-  redirect(recurrenceCount > 1 ? `/teams/${teamId}/events?toast=events-created` : `/teams/${teamId}/events/${events?.[0]?.id}?toast=event-created`);
-}
-
-export async function createEventFromTemplateAction(teamId: string, templateId: string) {
-  const { supabase, user } = await requireTeamManager(teamId, `/teams/${teamId}/events`);
-  const { data: template, error: templateError } = await supabase
-    .from("event_templates")
-    .select("*")
-    .eq("id", templateId)
-    .eq("team_id", teamId)
-    .single();
-
-  if (templateError || !template) {
-    throw new Error(getUserFacingSupabaseError(templateError, "Die Vorlage wurde nicht gefunden."));
-  }
-
-  let startsAt = new Date(template.source_starts_at);
-  while (startsAt.getTime() <= Date.now()) startsAt = addWeeks(startsAt, 1);
-
-  for (let attempt = 0; attempt < 104; attempt += 1) {
-    const { data: existing, error: existingError } = await supabase
-      .from("events")
-      .select("id")
-      .eq("team_id", teamId)
-      .eq("starts_at", startsAt.toISOString())
-      .maybeSingle();
-
-    if (existingError) {
-      throw new Error(getUserFacingSupabaseError(existingError, "Der nächste freie Termin konnte nicht geprüft werden."));
-    }
-
-    if (!existing) break;
-    startsAt = addWeeks(startsAt, 1);
-  }
-
-  const endsAt = addMinutes(startsAt, template.duration_minutes);
-  const { data: event, error } = await supabase.from("events").insert({
-    team_id: teamId,
-    title: template.title,
-    type: template.type,
-    starts_at: startsAt.toISOString(),
-    ends_at: endsAt.toISOString(),
-    location: template.location,
-    description: template.description,
-    created_by: user.id
-  }).select("id").single();
-
-  if (error || !event) {
-    throw new Error(getUserFacingSupabaseError(error, "Der Termin konnte nicht aus der Vorlage erstellt werden."));
-  }
-
-  redirect(`/teams/${teamId}/events/${event.id}?toast=event-from-template-created`);
-}
-
-export async function deleteEventTemplateAction(teamId: string, templateId: string) {
-  const { supabase } = await requireTeamManager(teamId, `/teams/${teamId}/events`);
-  const { error } = await supabase.from("event_templates").delete().eq("id", templateId).eq("team_id", teamId);
-  if (error) throw new Error(getUserFacingSupabaseError(error, "Die Vorlage konnte nicht gelöscht werden."));
-  redirect(`/teams/${teamId}/events?toast=event-template-deleted`);
+  redirect(recurrenceCount > 1 ? `/teams/${teamId}/events?toast=events-created` : `/teams/${teamId}/events/${events[0].id}?toast=event-created`);
 }
 
 export async function updateEventAction(teamId: string, eventId: string, formData: FormData) {

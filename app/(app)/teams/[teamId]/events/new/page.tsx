@@ -56,22 +56,6 @@ export default async function NewEventPage({ params }: NewEventPageProps) {
             </label>
           </div>
           <Textarea name="description" placeholder="Beschreibung, Treffpunkt oder Zusatzinfos" />
-          <div className="grid gap-4 rounded-xl border border-border bg-muted/25 p-5 sm:grid-cols-[auto_1fr] sm:items-center">
-            <input
-              id="save_as_template"
-              name="save_as_template"
-              type="checkbox"
-              value="yes"
-              className="h-5 w-5 accent-primary"
-            />
-            <div>
-              <label htmlFor="save_as_template" className="font-semibold">Als Vorlage speichern</label>
-              <p className="mt-1 text-sm text-muted-foreground">Gleiche Uhrzeit, Dauer und Angaben später mit einem Klick erneut verwenden.</p>
-            </div>
-            <div className="sm:col-start-2">
-              <Input name="template_name" placeholder="Vorlagenname, z. B. Dienstagstraining" />
-            </div>
-          </div>
           <div className="flex justify-end">
             <SubmitButton pendingLabel="Termin wird erstellt...">Termin speichern</SubmitButton>
           </div>
