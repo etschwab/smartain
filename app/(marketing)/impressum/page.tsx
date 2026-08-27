@@ -8,10 +8,29 @@ export const metadata: Metadata = {
 };
 
 const rows = [
-  { label: "Verantwortlich", value: "Etienne Schwab" },
-  { label: "Kontakt", value: "contact@etienneschwab.ch", href: "mailto:contact@etienneschwab.ch" },
+  { label: "Betreiber", value: "Etienne Schwab" },
   { label: "Standort", value: "Bern, Schweiz" },
-  { label: "Zweck", value: "Team-Management- und Trainings-App" }
+  { label: "E-Mail", value: "contact@etienneschwab.ch", href: "mailto:contact@etienneschwab.ch" },
+  { label: "Website", value: "smartrain.etienneschwab.ch", href: "https://smartrain.etienneschwab.ch" }
+] as const;
+
+const sections = [
+  {
+    title: "Verantwortung für Inhalte",
+    text: "Der Betreiber erstellt und pflegt die Inhalte dieser Website mit angemessener Sorgfalt. Eine Gewähr für Vollständigkeit, Richtigkeit und jederzeitige Verfügbarkeit wird nicht übernommen. Hinweise zu fehlerhaften Inhalten können per E-Mail gemeldet werden."
+  },
+  {
+    title: "Externe Links",
+    text: "Für Inhalte externer Websites, auf die Smartrain verweist, sind ausschliesslich deren jeweilige Betreiber verantwortlich. Zum Zeitpunkt der Verlinkung waren keine offensichtlichen rechtswidrigen Inhalte erkennbar."
+  },
+  {
+    title: "Urheberrecht",
+    text: "Inhalte, Gestaltung und eigene Werke auf dieser Website unterliegen dem anwendbaren Urheberrecht. Eine Verwendung ausserhalb der gesetzlichen Schranken bedarf der vorherigen Zustimmung des jeweiligen Rechteinhabers."
+  },
+  {
+    title: "Technischer Betrieb",
+    text: "Die Webanwendung wird über Vercel bereitgestellt. Authentifizierung und Datenhaltung erfolgen über Supabase. Weitere Informationen zur Verarbeitung personenbezogener Daten stehen in der Datenschutzerklärung."
+  }
 ] as const;
 
 export default function ImpressumPage() {
@@ -21,7 +40,7 @@ export default function ImpressumPage() {
         <div className="legal-hero">
           <p className="section-kicker">Rechtliches</p>
           <h1>Impressum<span>.</span></h1>
-          <p>Kontakt, verantwortliche Person und Zweck der Smartrain-Webanwendung.</p>
+          <p>Angaben zum Betreiber und zur Verantwortlichkeit für die Smartrain-Webanwendung.</p>
         </div>
 
         <dl className="legal-list">
@@ -33,12 +52,22 @@ export default function ImpressumPage() {
           ))}
         </dl>
 
-        <div className="legal-notes">
-          <p>Smartrain dient der Organisation von Teams, Trainings, Terminen und zugehörigen Aufgaben.</p>
-          <p>Für Inhalte verlinkter Websites sind deren jeweilige Betreiber verantwortlich.</p>
+        <div className="legal-copy">
+          {sections.map((section, index) => (
+            <section key={section.title}>
+              <span>{String(index + 1).padStart(2, "0")}</span>
+              <div>
+                <h2>{section.title}</h2>
+                <p>{section.text}</p>
+              </div>
+            </section>
+          ))}
         </div>
 
-        <Link className="editorial-link legal-back-link" href="/">Zurück zur Startseite <span aria-hidden="true">↗</span></Link>
+        <div className="legal-actions flex flex-wrap gap-6">
+          <Link className="editorial-link" href="/">Zurück zur Startseite <span aria-hidden="true">↗</span></Link>
+          <Link className="editorial-link" href="/datenschutz">Datenschutzerklärung <span aria-hidden="true">↗</span></Link>
+        </div>
       </div>
     </main>
   );

@@ -614,6 +614,10 @@
     justify-self: start;
   }
 
+  .legal-actions {
+    grid-column: 1;
+  }
+
   .site-footer {
     border-top: 1px solid hsl(var(--border) / 0.72);
     padding-block: 1.8rem;
