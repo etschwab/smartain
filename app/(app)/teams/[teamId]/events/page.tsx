@@ -1,13 +1,16 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CalendarPlus, MapPin } from "lucide-react";
+import { CalendarPlus, CopyPlus, MapPin, Trash2 } from "lucide-react";
+import { ConfirmSubmit } from "@/components/confirm-submit";
+import { SubmitButton } from "@/components/forms/submit-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { TeamTabs } from "@/components/team/team-tabs";
+import { createEventFromTemplateAction, deleteEventTemplateAction } from "@/lib/actions";
 import { managerRoles } from "@/lib/constants";
-import { getTeamById, listTeamEvents } from "@/lib/data";
+import { getTeamById, listEventTemplates, listTeamEvents } from "@/lib/data";
 import { requireTeamAccess } from "@/lib/supabase-server";
 import { formatDateTimeLabel, getEventTypeLabel, isFutureDate } from "@/lib/utils";
 
@@ -17,9 +20,10 @@ export default async function TeamEventsPage({ params }: TeamEventsPageProps) {
   const { teamId } = await params;
   const { supabase, membership } = await requireTeamAccess(teamId, `/teams/${teamId}/events`);
   const canManage = managerRoles.includes(membership.role);
-  const [team, events] = await Promise.all([
+  const [team, events, templates] = await Promise.all([
     getTeamById(supabase, teamId),
-    listTeamEvents(supabase, teamId)
+    listTeamEvents(supabase, teamId),
+    canManage ? listEventTemplates(supabase, teamId) : Promise.resolve([])
   ]);
 
   if (!team) notFound();
@@ -63,6 +67,40 @@ export default async function TeamEventsPage({ params }: TeamEventsPageProps) {
         </div>
         <div className="mt-6"><TeamTabs teamId={team.id} /></div>
       </Card>
+
+      {canManage && templates.length > 0 ? (
+        <section className="space-y-4">
+          <div>
+            <h2 className="text-xl font-semibold">Terminvorlagen</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Wiederkehrende Termine mit einem Klick erneut anlegen.</p>
+          </div>
+          <div className="grid gap-3 lg:grid-cols-2">
+            {templates.map((template) => (
+              <Card key={template.id} className="p-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="truncate font-semibold">{template.name}</h3>
+                      <Badge>{getEventTypeLabel(template.type)}</Badge>
+                    </div>
+                    <p className="mt-2 text-sm text-muted-foreground">{template.duration_minutes} Minuten{template.location ? ` · ${template.location}` : ""}</p>
+                  </div>
+                  <form action={deleteEventTemplateAction.bind(null, team.id, template.id)}>
+                    <ConfirmSubmit type="submit" variant="ghost" size="icon" aria-label="Vorlage löschen" confirmMessage={`Vorlage „${template.name}“ löschen?`}>
+                      <Trash2 className="h-4 w-4" />
+                    </ConfirmSubmit>
+                  </form>
+                </div>
+                <form action={createEventFromTemplateAction.bind(null, team.id, template.id)} className="mt-5">
+                  <SubmitButton variant="secondary" className="w-full" pendingLabel="Termin wird erstellt...">
+                    <CopyPlus className="h-4 w-4" />Nächsten Termin erstellen
+                  </SubmitButton>
+                </form>
+              </Card>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       {events.length === 0 ? (
         <EmptyState
